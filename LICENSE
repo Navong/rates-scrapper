@@ -1,0 +1,26 @@
+Copyright (c) 2026 Nathan — Cambodia Team. All rights reserved.
+
+Remittance Rate Comparison Tool
+Built by Nathan, Cambodia Team.
+
+This software and its accompanying documentation are proprietary and
+confidential. They are provided solely for internal business use within the
+organization.
+
+Permission is NOT granted to copy, modify, merge, publish, distribute,
+sublicense, or sell copies of this software, in whole or in part, to any third
+party without prior written consent from the copyright holder.
+
+The software scrapes publicly available exchange-rate information from
+third-party remittance providers. Those rates remain the property of their
+respective owners, are provided for internal comparison purposes only, and
+carry no warranty of accuracy, completeness, or timeliness. Do not rely on
+them as the sole basis for a financial decision.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

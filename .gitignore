@@ -1,0 +1,24 @@
+# Dependencies / build
+node_modules/
+.next/
+next-env.d.ts
+
+# Secrets (never commit)
+.env
+.env.*
+!.env.example
+.railway-token.txt
+
+# Generated output
+rates.xlsx
+rates.csv
+*.log
+
+# Runtime state (persisted app data — machine-specific, not source)
+data/
+events.jsonl
+tunnel-url.txt
+
+# Other tools / editors
+.codex/
+.DS_Store
