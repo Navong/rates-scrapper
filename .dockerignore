@@ -1,0 +1,11 @@
+node_modules
+.next
+data
+.env
+.railway-token.txt
+tunnel-url.txt
+*.log
+.git
+.mcp.json
+*.md
+*.bat

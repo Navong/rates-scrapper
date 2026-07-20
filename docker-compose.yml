@@ -1,0 +1,63 @@
+# Local "home server" production stack: backend + Cloudflare tunnel.
+# Runs from YOUR residential IP, so all 5 providers (incl. SBI) work.
+#
+# Quick tunnel (ephemeral URL, good for testing):
+#   docker compose --profile quick up -d --build
+#   docker compose logs tunnel-quick        # copy the https://*.trycloudflare.com URL
+#
+# Named tunnel (STABLE URL via your Cloudflare domain — production):
+#   1) Put CF_TUNNEL_TOKEN in .env  (see NEXT-STEPS.md)
+#   2) docker compose --profile named up -d --build
+#
+#   docker compose down                      # stop everything
+
+services:
+  backend:
+    build: .
+    image: rate-backend
+    environment:
+      - TZ=Asia/Seoul
+      - PORT=8787
+      - RATES_TOKEN=${RATES_TOKEN:-}
+      - ACCESS_PASSWORD=${ACCESS_PASSWORD:-gme}
+      # Admin (single account). Defaults below are a TEST cred (user "admin",
+      # password "admin-test-2026") — regenerate with:
+      #   node scripts/hash-password.mjs "your-strong-password"
+      # and put ADMIN_USER / ADMIN_PASSWORD_HASH / ADMIN_TOKEN in .env.
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-362187a34c27f358b24f720ccc501603:20d82f1e9f343b18fd59e45709faf67474747e561b0aa7f106afc3170a862787}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-09ee42f06e25717f9d1f8aaf89490d5ef8dd6fd41250bf5f}
+      - CACHE_TTL=${CACHE_TTL:-240}
+      - GME_TTL=${GME_TTL:-240}
+      - STATE_DIR=/data
+    # Publish on BOTH loopback families so the host cloudflared service reaches it
+    # whether it resolves localhost to 127.0.0.1 (IPv4) or ::1 (IPv6).
+    # Loopback-only — not exposed to the LAN.
+    ports:
+      - "127.0.0.1:8787:8787"
+      - "[::1]:8787:8787"
+    # Bind-mount the project's ./data so manual rates, fee overrides, the warm
+    # rank-cache and analytics all persist on the host (and carry over from the
+    # host-run setup) — visible and editable outside the container.
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+  # NOTE: cloudflared runs as a HOST service (not here) because the Cloudflare
+  # tunnel routes several other sites (minio/baserow/wordpress/…) to host
+  # localhost ports. The host service can reach all of them; a container can't.
+  # The backend publishes 8787 on both 127.0.0.1 and ::1 (dual-stack) so the
+  # host cloudflared reaches it regardless of localhost→IPv4/IPv6 resolution.
+
+  # --- Optional: quick tunnel for ad-hoc testing (random URL) ---
+  tunnel-quick:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://backend:8787
+    depends_on: [backend]
+    restart: unless-stopped
+    profiles: ["quick"]
