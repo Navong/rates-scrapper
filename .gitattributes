@@ -1,0 +1,12 @@
+# Normalize line endings: LF in the repo for everything text…
+* text=auto eol=lf
+
+# …except Windows scripts, which must stay CRLF to run correctly.
+*.bat text eol=crlf
+*.vbs text eol=crlf
+
+# Binary assets — never touch.
+*.avif binary
+*.png  binary
+*.xlsx binary
+*.ico  binary
