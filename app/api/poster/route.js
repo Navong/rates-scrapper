@@ -8,9 +8,12 @@ import { todayStr } from "@/lib/ui.jsx";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/pipeline/poster?method=BANK
-// Renders a marketing rate poster (PNG) for a Cambodia service from live rates.
-// Admin-gated by middleware (/api/pipeline is in ADMIN_PREFIXES).
+// GET /api/poster?method=BANK   → marketing rate-poster PNG for a Cambodia service.
+//
+// This is a DATA endpoint (not under /api/pipeline), so middleware accepts the
+// machine token (?token=<RATES_TOKEN> or x-api-token) exactly like /rates — which
+// is what lets Microsoft Teams / Power Automate embed the image by URL. The admin
+// session cookie also satisfies it, so the in-app "Generate poster" button works too.
 export async function GET(req) {
   const country = getCountry("KH"); // Cambodia only (pipeline scope)
   const url = new URL(req.url);
@@ -45,7 +48,8 @@ export async function GET(req) {
     headers: {
       "Content-Type": "image/png",
       "Content-Disposition": `inline; filename="${fname}"`,
-      "Cache-Control": "no-store",
+      // Let Teams/browsers cache briefly so re-renders in a card are cheap.
+      "Cache-Control": "public, max-age=120",
     },
   });
 }

@@ -87,7 +87,7 @@ export default async function PipelinePage() {
           )}
           <div className="oppact">
             {r.gme ? (
-              <a className={`btn${r.trigger ? " primary" : ""}`} href={`/api/pipeline/poster?method=${r.method.key}`}
+              <a className={`btn${r.trigger ? " primary" : ""}`} href={`/api/poster?method=${r.method.key}`}
                 target="_blank" rel="noreferrer" style={{ width: "auto", padding: "11px 20px" }}>
                 Generate poster (PNG)
               </a>
