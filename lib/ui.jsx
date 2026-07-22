@@ -130,7 +130,6 @@ export function CountryTabs({ countries, activeCode, hrefFor }) {
   );
 }
 
-export const todayStr = (d = new Date()) => {
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-};
+// Lives in lib/date.mjs (pure, no React) so route handlers can import it
+// without pulling this module in; re-exported here for existing callers.
+export { todayStr } from "./date.mjs";

@@ -9,7 +9,13 @@ const nextConfig = {
 
   // The rate/warmer code uses Node built-ins (node:http client, fs, timers) and
   // must run in the Node.js runtime, never the edge runtime.
-  serverExternalPackages: ["exceljs"],
+  //
+  // `sharp` MUST be external too: it's a native module whose binary is
+  // platform-specific (@img/sharp-linuxmusl-x64 in the Alpine image, win32 on a
+  // dev box). Letting webpack bundle it resolves locally but fails the Docker
+  // build with "webpack errors" on the routes that import it (/api/poster,
+  // /api/sheet). External = required at runtime instead of bundled.
+  serverExternalPackages: ["exceljs", "sharp"],
 };
 
 export default nextConfig;

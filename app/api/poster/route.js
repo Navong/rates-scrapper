@@ -3,7 +3,7 @@ import { getCountryRecords } from "@/lib/cache.mjs";
 import { buildRankingData } from "@/ranking.mjs";
 import { getStore } from "@/manual.mjs";
 import { posterPNG } from "@/lib/poster.mjs";
-import { todayStr } from "@/lib/ui.jsx";
+import { todayStr } from "@/lib/date.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
