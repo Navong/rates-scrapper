@@ -34,6 +34,30 @@ export const COUNTRIES = {
     },
   },
 
+  VN: {
+    code: "VN",
+    name: "Vietnam",
+    flag: "🇻🇳",
+    currency: "VND",
+    receiveAmount: 20000000,
+    anchor: "GME",
+    methods: [{ key: "BANK", label: "Bank Deposit" }],
+    // Provider params verified live against each API for VND 20,000,000.
+    // E9pay VN nation = VN03 (found by probing); Gmoney needs the payout country
+    // spelled "Viet Nam" (with a space) or its API returns no rate.
+    providers: {
+      GME:     { countryName: "Vietnam", deliveryMethod: { BANK: "2" }, fee: { BANK: 5000 } },
+      E9PAY:   { nation: { BANK: "VN03" }, fee: { BANK: 7000 } },
+      HANPASS: { countryCode: "VN", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
+      GMONEY:  { country: "Viet Nam", payment: { BANK: "Bank Account" }, fee: { BANK: 3500 } },
+      SBI:     { countryId: "VIETNAM", fee: { BANK: 5000 } },
+      JRF:     { type: { BANK: "Bank Transfer" }, fee: { BANK: 5000 } },
+      // No public rate API → entered manually on the sheet.
+      SENTBE:  { manual: true, fee: { BANK: 5000 } },
+      CROSS:   { manual: true, fee: { BANK: 5000 } },
+    },
+  },
+
   NP: {
     code: "NP",
     name: "Nepal",
