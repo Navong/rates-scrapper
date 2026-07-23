@@ -39,7 +39,6 @@ const ROW_H = 30;
 const STAMP_H = 28;
 const TABLE_GAP = 22;
 const PANEL_PAD = 18;
-const TITLE_H = 44; // caption band at the top of the copied image
 
 function drawCell(ctx, x, y, w, h, text, { bg = "#fff", bold = false, align = "center", color = "#000", border = "#c9ced6" } = {}) {
   ctx.fillStyle = bg;
@@ -105,12 +104,13 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   }
 
   // Dynamic caption, e.g. "Cambodia Rate at 04:32 PM" — current corridor + time.
+  // Kept SEPARATE from the image (not drawn into it).
   const caption = `${d.name} Rate at ${time12()}`;
 
   const tableHeights = d.methods.map((m) => STAMP_H + ROW_H + (d.blocks[m.key] || []).length * ROW_H);
   const grid = !!d.grid;
   const width = PANEL_PAD * 2 + (grid ? SHEET_W * 2 + 14 : SHEET_W);
-  const height = PANEL_PAD * 2 + TITLE_H + (grid
+  const height = PANEL_PAD * 2 + (grid
     ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 + (tableHeights[2] || 0)
     : tableHeights.reduce((sum, h, i) => sum + h + (i ? TABLE_GAP : 0), 0));
 
@@ -123,22 +123,14 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
 
-  // Caption band baked into the image so the text travels with any paste.
-  ctx.fillStyle = "#e4002b";
-  ctx.font = "700 22px Arial, sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText(caption, PANEL_PAD, PANEL_PAD + TITLE_H / 2, width - PANEL_PAD * 2);
-
-  const topY = PANEL_PAD + TITLE_H;
   if (grid) {
     d.methods.forEach((m, i) => {
       const x = PANEL_PAD + (i === 1 ? SHEET_W + 14 : i === 2 ? (SHEET_W + 14) / 2 : 0);
-      const y = topY + (i === 2 ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 : 0);
+      const y = PANEL_PAD + (i === 2 ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 : 0);
       drawServiceTable(ctx, d, m, d.blocks[m.key] || [], x, y, dateStr, timeStr);
     });
   } else {
-    let y = topY;
+    let y = PANEL_PAD;
     d.methods.forEach((m, i) => {
       if (i) y += TABLE_GAP;
       drawServiceTable(ctx, d, m, d.blocks[m.key] || [], PANEL_PAD, y, dateStr, timeStr);
@@ -147,10 +139,20 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   }
 
   const png = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not create PNG.")), "image/png"));
-  // Copy image ONLY. The caption is baked into the PNG, so the paste shows both.
-  // (Adding a text/plain part makes many targets paste the text instead of the
-  // image, which is the opposite of what we want.)
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+
+  // Clipboard with THREE parts so the caption and image stay separate:
+  //   text/html  — a caption line above the <img>; rich targets (Teams, Kakao,
+  //                email, docs) render this → selectable text + a real image.
+  //   image/png  — pure-image targets paste just the picture.
+  //   text/plain — plain-text fields fall back to the caption text.
+  const dataUrl = await new Promise((res) => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(png); });
+  const safe = caption.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const html = `<div style="font:700 15px Arial,sans-serif;color:#e4002b;margin:0 0 6px">${safe}</div><img src="${dataUrl}" alt="${safe}">`;
+  await navigator.clipboard.write([new ClipboardItem({
+    "text/html": new Blob([html], { type: "text/html" }),
+    "image/png": png,
+    "text/plain": new Blob([caption], { type: "text/plain" }),
+  })]);
 }
 
 // Operational counters for the stat bar (first method), same logic as the server.
