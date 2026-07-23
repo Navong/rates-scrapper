@@ -1,0 +1,57 @@
+# Raspberry Pi (arm64) deployment — runs the PRE-BUILT image from Docker Hub.
+# No local build: `docker compose -f docker-compose.pi.yml up -d` pulls
+# navong/rate-scraper:latest (multi-arch → the Pi gets the arm64 variant).
+#
+# Setup on the Pi:
+#   1) put this file + a .env in a folder (e.g. ~/rate-scraper/)
+#   2) create .env with at least RATES_TOKEN and the ADMIN_* values (see below)
+#   3) docker compose -f docker-compose.pi.yml up -d
+#   4) curl -s localhost:8787/health
+#
+# Update to a new release later:
+#   docker compose -f docker-compose.pi.yml pull && \
+#   docker compose -f docker-compose.pi.yml up -d
+#
+# ONE INSTANCE ONLY: if this Pi is serving, stop the Windows container
+# (docker compose down) — two warmers scraping in parallel upsets GME.
+
+services:
+  backend:
+    image: navong/rate-scraper:latest
+    pull_policy: always            # always fetch the newest pushed image on `up`
+    environment:
+      - TZ=Asia/Seoul
+      - PORT=8787
+      - STATE_DIR=/data
+      - RATES_TOKEN=${RATES_TOKEN:-}
+      - ACCESS_PASSWORD=${ACCESS_PASSWORD:-gme}
+      # Admin (single account). Defaults below are the TEST cred (user "admin",
+      # password "admin-test-2026"). Override in .env for production —
+      #   node scripts/hash-password.mjs "your-strong-password"
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-362187a34c27f358b24f720ccc501603:20d82f1e9f343b18fd59e45709faf67474747e561b0aa7f106afc3170a862787}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-09ee42f06e25717f9d1f8aaf89490d5ef8dd6fd41250bf5f}
+      - CACHE_TTL=${CACHE_TTL:-240}
+      - GME_TTL=${GME_TTL:-240}
+    # Loopback only — the Pi's cloudflared reaches it on 127.0.0.1:8787.
+    # (To hit it from other LAN machines instead, change to "8787:8787".)
+    ports:
+      - "127.0.0.1:8787:8787"
+    # Persist manual rates, fee overrides, the warm rank-cache and analytics.
+    volumes:
+      - ./data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8787/health"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+  # --- Optional: run the Cloudflare tunnel here too (named tunnel) ---
+  # Uncomment and put CF_TUNNEL_TOKEN in .env if you want the Pi to own the
+  # tunnel instead of a separate host cloudflared service.
+  # tunnel:
+  #   image: cloudflare/cloudflared:latest
+  #   command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+  #   depends_on: [backend]
+  #   restart: unless-stopped
