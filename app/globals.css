@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Design tokens (the GME red operations look) live as CSS variables so they can
-   flip in dark mode, and are ALSO exposed to Tailwind via @theme inline so
+   Design tokens (the GME red operations look) live as CSS variables (light mode
+   only — see :root / color-scheme below) and are ALSO exposed to Tailwind via @theme inline so
    utilities like `bg-card`, `text-muted`, `border-line`, `text-brand` resolve to
    the same variables. Style with Tailwind utilities where handy; the hand-tuned
    component classes below cover the tricky bits (full-bleed bars, the
@@ -28,6 +28,9 @@
 }
 
 :root {
+  /* Light mode only — force the light palette AND light native UI (form
+     controls, scrollbars) even when the OS/browser is set to dark mode. */
+  color-scheme: light;
   --brand: #e4002b; --brand-d: #b60022;
   --bg: #f4f5f7; --card: #ffffff; --text: #1a1d24; --muted: #6b7280; --line: #e6e8ec;
   --good: #12b886; --bad: #e4002b; --warn: #f5a623; --accent: #e4002b; --accent-weak: #fdecef;
@@ -36,16 +39,8 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
   --wrap: 1180px;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --brand: #e4002b; --brand-d: #b60022;
-    --bg: #0f1115; --card: #171a21; --text: #e9edf2; --muted: #9aa0a6; --line: #262a33;
-    --good: #2fd08b; --bad: #ff5a6a; --warn: #f7b955; --accent: #ff5364; --accent-weak: #2a1418;
-    --chipbg: #20242c; --chiptext: #aeb6c2;
-    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .3);
-  }
-}
+/* Dark-mode overrides intentionally removed: the app is light-mode only, so the
+   design tokens above apply regardless of the system prefers-color-scheme. */
 
 * { box-sizing: border-box; }
 html, body { min-height: 100%; overflow-x: hidden; }

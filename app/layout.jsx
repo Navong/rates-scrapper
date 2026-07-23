@@ -5,7 +5,10 @@ export const metadata = {
   description: "KR → multi-corridor remittance rate comparison across providers.",
 };
 
-export const viewport = { width: "device-width", initialScale: 1 };
+// Light mode only — declare it at the document level too (emits
+// <meta name="color-scheme" content="light">) so the browser never applies dark
+// UA styling to form controls/scrollbars even when the OS is in dark mode.
+export const viewport = { width: "device-width", initialScale: 1, colorScheme: "light" };
 
 export default function RootLayout({ children }) {
   return (
