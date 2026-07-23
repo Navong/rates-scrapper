@@ -33,6 +33,8 @@ services:
       - ADMIN_TOKEN=${ADMIN_TOKEN:-09ee42f06e25717f9d1f8aaf89490d5ef8dd6fd41250bf5f}
       - CACHE_TTL=${CACHE_TTL:-240}
       - GME_TTL=${GME_TTL:-240}
+      # Teams webhook for the sheet's "Send to Teams" button (blank = hidden).
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
     # Loopback only — the Pi's cloudflared reaches it on 127.0.0.1:8787.
     # (To hit it from other LAN machines instead, change to "8787:8787".)
     ports:

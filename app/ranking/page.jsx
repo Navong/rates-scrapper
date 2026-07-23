@@ -27,6 +27,7 @@ export default async function RankingPage({ searchParams }) {
     : null;
 
   const admin = roleFromValue(ck.get("rt")?.value) === "admin";
+  const teamsEnabled = !!process.env.TEAMS_WEBHOOK_URL;
 
   return (
     <SheetClient
@@ -35,6 +36,7 @@ export default async function RankingPage({ searchParams }) {
       initialCountry={country.code}
       initialData={initialData}
       admin={admin}
+      teamsEnabled={teamsEnabled}
     />
   );
 }

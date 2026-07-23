@@ -264,13 +264,14 @@ function SheetSkeleton() {
   );
 }
 
-export default function SheetClient({ countries, reportDate, initialCountry, initialData, admin = false }) {
+export default function SheetClient({ countries, reportDate, initialCountry, initialData, admin = false, teamsEnabled = false }) {
   const [country, setCountry] = useState(initialCountry);
   const [data, setData] = useState(initialData || null);
   const [err, setErr] = useState("");
   const [mounted, setMounted] = useState(false);
   const [stamp, setStamp] = useState({ date: reportDate, time: "" });
   const [copyState, setCopyState] = useState("");
+  const [sendState, setSendState] = useState("");
   const requestRef = useRef(0);
   const didMount = useRef(false);
 
@@ -336,6 +337,32 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
     </button>
   );
 
+  // Post the caption + sheet image to the team's Teams channel (server → webhook).
+  const sendTeams = useCallback(async () => {
+    if (!d || sendState === "sending") return;
+    setSendState("sending");
+    try {
+      const res = await fetch(`/api/send-teams?country=${country}`, { method: "POST" });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok) throw new Error(j.error || `HTTP ${res.status}`);
+      setSendState("sent");
+      setTimeout(() => setSendState(""), 2000);
+    } catch (e) {
+      setSendState("failed");
+      setErr("Send to Teams failed: " + e.message);
+      setTimeout(() => setSendState(""), 2600);
+    }
+  }, [sendState, d, country]);
+
+  const sendButton = teamsEnabled ? (
+    <button className="btn send-teams-btn" type="button" disabled={!d || sendState === "sending"} onClick={sendTeams} title="Send caption + image to Teams">
+      <span className="copy-ico">📨</span>
+      <span>{sendState === "sending" ? "Sending..." : sendState === "sent" ? "Sent ✓" : sendState === "failed" ? "Failed" : "Send to Teams"}</span>
+    </button>
+  ) : null;
+
+  const headerActions = <>{copyButton}{sendButton}</>;
+
   let tables = null;
   if (d) {
     const rendered = d.methods.map((m) => (
@@ -353,7 +380,7 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
         sub={sub}
         active="sheet"
         country={country}
-        extra={copyButton}
+        extra={headerActions}
         stats={d ? computeStats(d) : null}
         reportDate={reportDate}
         admin={admin}

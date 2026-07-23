@@ -30,6 +30,9 @@ services:
       - CACHE_TTL=${CACHE_TTL:-240}
       - GME_TTL=${GME_TTL:-240}
       - STATE_DIR=/data
+      # Teams Incoming Webhook / Workflow URL for the sheet's "Send to Teams"
+      # button (blank = button hidden). Create it on the channel, then set in .env.
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
     # Publish on BOTH loopback families so the host cloudflared service reaches it
     # whether it resolves localhost to 127.0.0.1 (IPv4) or ::1 (IPv6).
     # Loopback-only — not exposed to the LAN.
