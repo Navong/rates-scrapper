@@ -147,7 +147,7 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   //   text/plain — plain-text fields fall back to the caption text.
   const dataUrl = await new Promise((res) => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(png); });
   const safe = caption.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const html = `<div style="font:700 15px Arial,sans-serif;color:#e4002b;margin:0 0 6px">${safe}</div><img src="${dataUrl}" alt="${safe}">`;
+  const html = `<div style="font:15px Arial,sans-serif;margin:0 0 6px">${safe}</div><img src="${dataUrl}" alt="${safe}">`;
   await navigator.clipboard.write([new ClipboardItem({
     "text/html": new Blob([html], { type: "text/html" }),
     "image/png": png,
