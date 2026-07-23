@@ -54,7 +54,7 @@ export const COUNTRIES = {
       JRF:     { type: { BANK: "Bank Transfer" }, fee: { BANK: 5000 } },
       // No public rate API → entered manually on the sheet.
       SENTBE:  { manual: true, fee: { BANK: 5000 } },
-      CROSS:   { manual: true, fee: { BANK: 5000 } },
+      CROSS:   { platform: 144, rateUnit: 100, fee: { BANK: 5000 } }, // crossenf.com quote API
     },
   },
 
@@ -95,7 +95,7 @@ export const COUNTRIES = {
       HANPASS: { countryCode: "ID", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
       GMONEY:  { country: "Indonesia", payment: { BANK: "Bank Account" }, fee: { BANK: 2500 } },
       JRF:     { type: { BANK: "Bank Transfer" }, fee: { BANK: 4500 } },
-      CROSS:   { manual: true, fee: { BANK: 5000 } }, // no public rate API — manual entry
+      CROSS:   { platform: 68, rateUnit: 100, fee: { BANK: 5000 } }, // crossenf.com quote API
     },
   },
 
@@ -157,7 +157,7 @@ export const COUNTRIES = {
       SBI:      { countryId: "PHILIPPINES", fee: { CASH: 5000, BANK: 5000, WALLET: 5000 } },
       UTRANSFER:{ fee: { CASH: 5000, BANK: 2500, WALLET: 1500 } },
       SENTBE:   { manual: true, fee: { CASH: 5000, BANK: 5000, WALLET: 2500 } },
-      CROSS:    { manual: true, fee: { CASH: 0, BANK: 0, WALLET: 0 } },
+      CROSS:    { platform: 20, rateUnit: 1, fee: { CASH: 0, BANK: 0, WALLET: 0 } }, // crossenf.com — one rate, all methods
     },
   },
 
@@ -185,7 +185,7 @@ export const COUNTRIES = {
       MOIN:      { manual: true, fee: { ALIPAY: 0 } },
       WIREBARLEY:{ manual: true, fee: { ALIPAY: 0 } },
       SENTBE:    { manual: true, fee: { ALIPAY: 0 } },
-      CROSS:     { manual: true, fee: { ALIPAY: 0 } },
+      CROSS:     { platform: 122, rateUnit: 1, fee: { ALIPAY: 0 } }, // crossenf.com — Alipay platform
     },
   },
 
@@ -207,8 +207,8 @@ export const COUNTRIES = {
       SBI:       { countryId: "THAILAND", fee: { BANK: 5000 } },
       JRF:       { type: { BANK: "Bank Transfer" }, fee: { BANK: 5000 } },
       COINSHOT:  { fee: { BANK: 2500 } },
+      CROSS:     { platform: 80, rateUnit: 1, fee: { BANK: 5000 } }, // crossenf.com quote API
       // No public rate API → entered manually on the sheet.
-      CROSS:     { manual: true, fee: { BANK: 5000 } },
       WIREBARLEY:{ manual: true, fee: { BANK: 3000 } },
     },
   },
@@ -264,7 +264,7 @@ export const PROVIDER_LABEL = {
   KAKAO: "Kakao", DEBUNK: "Debunk", MOIN: "Moin", WIREBARLEY: "WireBarley", PANDA: "Panda",
 };
 
-export const MANUAL_PROVIDERS = ["SENTBE", "FONEMONEY", "CROSS", "HANAEZ"];
+export const MANUAL_PROVIDERS = ["SENTBE", "FONEMONEY", "HANAEZ"];
 
 // The receive amount for a method (methods may override the corridor default).
 export const amountFor = (country, mkey) =>

@@ -250,12 +250,44 @@ async function jrfCall(country, mkey, key = "JRF") {
   return rec(key, mkey, principal, Number(d.ServiceFee), rate, d);
 }
 
+// ---------- CROSS ----------
+// Public quote API (crossenf.com). The receive-mode quote returns `service_rate`
+// = KRW per `rateUnit` units of the payout currency (rateUnit is the "100" in a
+// "100 VND" rate_currency, else 1). Cross quotes ONE rate for the whole corridor
+// (bank == wallet == cash), so it's a SINGLE_RATE provider mirrored onto every
+// method. We derive the principal from service_rate rather than the API's
+// `sending_amount`, which bakes in a first-remit bonus — so Cross is compared on
+// its standard rate like every other provider.
+export function fetchCross(country, opts, key = "CROSS") {
+  return limited("CROSS", `${country.code}|${key}`, () => crossCall(country, key), opts);
+}
+async function crossCall(country, key = "CROSS") {
+  const cfg = country.providers[key];
+  const mkey = country.methods[0].key;
+  const recv = amountFor(country, mkey);
+  const qs = new URLSearchParams({
+    platform_id: String(cfg.platform), quote_type: "receive",
+    sending_amount: "0", receiving_amount: String(recv),
+    use_max_point: "true", deposit_type: "Manual", apply_user_limit: "0", is_home: "0",
+  });
+  const res = await fetch(`https://crossenf.com/v2/outbound/quote/?${qs}`, {
+    headers: { "User-Agent": UA, Referer: "https://crossenf.com/remittance", Accept: "application/json" },
+  });
+  if (!res.ok) throw new Error(`CROSS HTTP ${res.status}`);
+  const j = await res.json();
+  if (Number(j.error_code) !== 0 || !j.data) throw new Error(`CROSS error: ${j.error || j.error_code}`);
+  const rate = Number(j.data.service_rate); // KRW per `rateUnit` units of payout currency
+  if (!rate) throw new Error("CROSS: no rate");
+  const principal = recv * rate / (cfg.rateUnit || 1); // excludes the first-remit bonus
+  return rec(key, mkey, principal, cfg.fee?.[mkey] ?? (Number(j.data.fee) || 0), rate, j.data);
+}
+
 // ---------- Orchestrator ----------
 // Providers that quote a rate per payout method.
 const PER_METHOD = { GME: fetchGme, E9PAY: fetchE9pay, HANPASS: fetchHanpass, GMONEY: fetchGmoney, JRF: fetchJrf };
 // Providers with ONE rate for the whole corridor — fetched once, mirrored onto
 // every service so they appear in each table.
-const SINGLE_RATE = { SBI: fetchSbi, COINSHOT: fetchCoinshot, UTRANSFER: fetchUtransfer, PANDA: fetchPanda };
+const SINGLE_RATE = { SBI: fetchSbi, COINSHOT: fetchCoinshot, UTRANSFER: fetchUtransfer, PANDA: fetchPanda, CROSS: fetchCross };
 
 /**
  * Apply the country's fixed fee table. When a country declares a fee for a
