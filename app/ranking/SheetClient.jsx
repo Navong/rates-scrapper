@@ -147,10 +147,10 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   }
 
   const png = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not create PNG.")), "image/png"));
-  // Copy the PNG (caption baked in) plus the caption as plain text, so image-
-  // capable targets paste the image and text-only targets get the caption.
-  const textBlob = new Blob([caption], { type: "text/plain" });
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": png, "text/plain": textBlob })]);
+  // Copy image ONLY. The caption is baked into the PNG, so the paste shows both.
+  // (Adding a text/plain part makes many targets paste the text instead of the
+  // image, which is the opposite of what we want.)
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
 }
 
 // Operational counters for the stat bar (first method), same logic as the server.
