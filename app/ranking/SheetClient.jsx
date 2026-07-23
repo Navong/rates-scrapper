@@ -26,6 +26,12 @@ const stampNow = () => {
   const d = new Date();
   return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}` };
 };
+// 12-hour clock like "04:32 PM" for the copied-image caption.
+const time12 = (d = new Date()) => {
+  const ap = d.getHours() >= 12 ? "PM" : "AM";
+  const h = d.getHours() % 12 || 12;
+  return `${pad2(h)}:${pad2(d.getMinutes())} ${ap}`;
+};
 
 const SHEET_COLS = [92, 112, 130, 92, 108, 108, 138, 100];
 const SHEET_W = SHEET_COLS.reduce((a, b) => a + b, 0);
@@ -33,6 +39,7 @@ const ROW_H = 30;
 const STAMP_H = 28;
 const TABLE_GAP = 22;
 const PANEL_PAD = 18;
+const TITLE_H = 44; // caption band at the top of the copied image
 
 function drawCell(ctx, x, y, w, h, text, { bg = "#fff", bold = false, align = "center", color = "#000", border = "#c9ced6" } = {}) {
   ctx.fillStyle = bg;
@@ -97,10 +104,13 @@ async function copySheetAsPng(d, dateStr, timeStr) {
     throw new Error("Image clipboard is not supported in this browser.");
   }
 
+  // Dynamic caption, e.g. "Cambodia Rate at 04:32 PM" — current corridor + time.
+  const caption = `${d.name} Rate at ${time12()}`;
+
   const tableHeights = d.methods.map((m) => STAMP_H + ROW_H + (d.blocks[m.key] || []).length * ROW_H);
   const grid = !!d.grid;
   const width = PANEL_PAD * 2 + (grid ? SHEET_W * 2 + 14 : SHEET_W);
-  const height = PANEL_PAD * 2 + (grid
+  const height = PANEL_PAD * 2 + TITLE_H + (grid
     ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 + (tableHeights[2] || 0)
     : tableHeights.reduce((sum, h, i) => sum + h + (i ? TABLE_GAP : 0), 0));
 
@@ -113,14 +123,22 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
 
+  // Caption band baked into the image so the text travels with any paste.
+  ctx.fillStyle = "#e4002b";
+  ctx.font = "700 22px Arial, sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillText(caption, PANEL_PAD, PANEL_PAD + TITLE_H / 2, width - PANEL_PAD * 2);
+
+  const topY = PANEL_PAD + TITLE_H;
   if (grid) {
     d.methods.forEach((m, i) => {
       const x = PANEL_PAD + (i === 1 ? SHEET_W + 14 : i === 2 ? (SHEET_W + 14) / 2 : 0);
-      const y = PANEL_PAD + (i === 2 ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 : 0);
+      const y = topY + (i === 2 ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 : 0);
       drawServiceTable(ctx, d, m, d.blocks[m.key] || [], x, y, dateStr, timeStr);
     });
   } else {
-    let y = PANEL_PAD;
+    let y = topY;
     d.methods.forEach((m, i) => {
       if (i) y += TABLE_GAP;
       drawServiceTable(ctx, d, m, d.blocks[m.key] || [], PANEL_PAD, y, dateStr, timeStr);
@@ -129,7 +147,10 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   }
 
   const png = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not create PNG.")), "image/png"));
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+  // Copy the PNG (caption baked in) plus the caption as plain text, so image-
+  // capable targets paste the image and text-only targets get the caption.
+  const textBlob = new Blob([caption], { type: "text/plain" });
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": png, "text/plain": textBlob })]);
 }
 
 // Operational counters for the stat bar (first method), same logic as the server.
