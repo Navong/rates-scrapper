@@ -399,22 +399,27 @@ async function main() {
   }
   console.log("");
 
-  // Append to CSV log
+  // Append to CSV log. Build the paths at runtime (dirname + join) rather than
+  // `new URL("./rates.csv", import.meta.url)` — the latter makes webpack try to
+  // bundle rates.csv/rates.xlsx as static assets, which fails the Next build
+  // (they're gitignored generated output, absent in CI). This is CLI-only code.
   const fs = await import("node:fs");
-  const path = new URL("./rates.csv", import.meta.url);
+  const { dirname, join } = await import("node:path");
+  const here = dirname(fileURLToPath(import.meta.url));
+  const csvPath = join(here, "rates.csv");
   const header = "timestamp,provider,country,currency,method,receiveUSD,krwPerUsd,principalKRW,feeKRW,sendTotalKRW\n";
-  if (!fs.existsSync(path)) fs.writeFileSync(path, header);
+  if (!fs.existsSync(csvPath)) fs.writeFileSync(csvPath, header);
   const csvRows = sbiRecord ? [...records, sbiRecord] : records;
   for (const r of csvRows) {
     fs.appendFileSync(
-      path,
+      csvPath,
       [r.timestamp, r.provider, r.country, r.currency, r.method, r.receiveUSD, r.krwPerUsd, r.principalKRW, r.feeKRW ?? "", r.sendTotalKRW].join(",") + "\n"
     );
   }
 
   // Write Excel workbook in the "Exchange rate (Daily)" monthly format.
   const { writeExcel } = await import("./xlsx-writer.mjs");
-  const xlsxPath = new URL("./rates.xlsx", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+  const xlsxPath = join(here, "rates.xlsx");
   const res = await writeExcel(xlsxPath, records, sbi, new Date(timestamp));
   console.log(res.ok ? `✓ rates.xlsx updated (sheet "${res.sheet}")` : `⚠ Excel not written: ${res.error}`);
 }
