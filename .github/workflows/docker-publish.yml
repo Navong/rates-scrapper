@@ -3,6 +3,17 @@ name: Publish Docker image
 # Builds a multi-arch (amd64 + arm64) image and pushes it to Docker Hub so the
 # Raspberry Pi (arm64) can just `docker pull` — no local/emulated build.
 #
+# RELEASE-TAG DRIVEN: this runs only when you push a git tag like `v1.0.0`
+# (not on every commit to main). The published image is tagged with that exact
+# version — `navong/rate-scraper:v1.0.0` — so you always know what's deployed.
+# `:latest` is also moved to point at the newest release, as a convenience only;
+# the compose files PIN a version so the Pi never silently changes under you.
+#
+# Cut a release:
+#   git tag v1.0.0
+#   git push origin v1.0.0
+# then bump the `image:` tag in docker-compose.pi.yml and `pull && up -d`.
+#
 # Uses NATIVE runners (ubuntu-24.04 = amd64, ubuntu-24.04-arm = arm64, both free
 # for public repos), so the arm64 image builds on real ARM hardware instead of
 # slow QEMU emulation. Each arch is pushed by digest, then merged into one tag.
@@ -15,8 +26,12 @@ name: Publish Docker image
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch: {}
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag to publish (e.g. v1.0.0)"
+        required: true
 
 env:
   IMAGE: navong/rate-scraper
@@ -80,11 +95,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # The version tag comes from the pushed git tag (e.g. v1.0.0), or the
+      # workflow_dispatch input when run manually.
+      - name: Resolve version tag
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create manifest list and push
         working-directory: /tmp/digests
         run: |
-          docker buildx imagetools create -t ${{ env.IMAGE }}:latest \
+          docker buildx imagetools create \
+            -t ${{ env.IMAGE }}:${{ steps.ver.outputs.tag }} \
+            -t ${{ env.IMAGE }}:latest \
             $(printf '${{ env.IMAGE }}@sha256:%s ' *)
 
       - name: Inspect
-        run: docker buildx imagetools inspect ${{ env.IMAGE }}:latest
+        run: docker buildx imagetools inspect ${{ env.IMAGE }}:${{ steps.ver.outputs.tag }}

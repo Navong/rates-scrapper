@@ -1,6 +1,6 @@
 # Raspberry Pi (arm64) deployment — runs the PRE-BUILT image from Docker Hub.
-# No local build: `docker compose -f docker-compose.pi.yml up -d` pulls
-# navong/rate-scraper:latest (multi-arch → the Pi gets the arm64 variant).
+# No local build: `docker compose -f docker-compose.pi.yml up -d` pulls the
+# PINNED version below (multi-arch → the Pi gets the arm64 variant).
 #
 # Setup on the Pi:
 #   1) put this file + a .env in a folder (e.g. ~/rate-scraper/)
@@ -9,16 +9,19 @@
 #   4) curl -s localhost:8787/health
 #
 # Update to a new release later:
-#   docker compose -f docker-compose.pi.yml pull && \
-#   docker compose -f docker-compose.pi.yml up -d
+#   1) bump the `image:` tag below (e.g. v1.0.0 → v1.0.1)
+#   2) docker compose -f docker-compose.pi.yml pull && \
+#      docker compose -f docker-compose.pi.yml up -d
 #
 # ONE INSTANCE ONLY: if this Pi is serving, stop the Windows container
 # (docker compose down) — two warmers scraping in parallel upsets GME.
 
 services:
   backend:
-    image: navong/rate-scraper:latest
-    pull_policy: always            # always fetch the newest pushed image on `up`
+    # PINNED version — bump this line to deploy a new release (then `pull && up -d`).
+    # See the docker-publish workflow: push a git tag `vX.Y.Z` to publish that tag.
+    image: navong/rate-scraper:v1.0.0
+    pull_policy: always            # re-verify the pinned tag's digest on `up`
     environment:
       - TZ=Asia/Seoul
       - PORT=8787
