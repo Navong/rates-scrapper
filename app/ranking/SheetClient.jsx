@@ -272,14 +272,18 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
   const [stamp, setStamp] = useState({ date: reportDate, time: "" });
   const [copyState, setCopyState] = useState("");
   const [sendState, setSendState] = useState("");
+  const [loading, setLoading] = useState(false);
   const requestRef = useRef(0);
   const didMount = useRef(false);
 
-  const load = useCallback(async (code) => {
+  // `fresh` forces a real re-scrape (bypasses the cache/memo) — same contract as
+  // the dashboard's Refresh. The limiter still queues + spaces the upstream calls.
+  const load = useCallback(async (code, fresh = false) => {
     const requestId = ++requestRef.current;
     setErr("");
+    setLoading(true);
     try {
-      const res = await fetch(`/api/ranking?country=${code}`, { headers: { Accept: "application/json" } });
+      const res = await fetch(`/api/ranking?country=${code}${fresh ? "&fresh=1" : ""}`, { headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error("HTTP " + res.status);
       const nextData = await res.json();
       if (requestId !== requestRef.current) return;
@@ -288,6 +292,9 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
     } catch (e) {
       if (requestId !== requestRef.current) return;
       setErr(e.message);
+    } finally {
+      // Only the newest request may clear the spinner (a superseded one must not).
+      if (requestId === requestRef.current) setLoading(false);
     }
   }, []);
 
@@ -361,7 +368,25 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
     </button>
   ) : null;
 
-  const headerActions = <>{copyButton}{sendButton}</>;
+  // Re-scrape the current corridor now. Same look/behaviour as the dashboard and
+  // stats Refresh, so the three pages stay consistent.
+  const refreshButton = (
+    <button
+      className={"btn" + (loading ? " spin" : "")}
+      type="button"
+      id="refresh"
+      title="Re-scrape this corridor now"
+      disabled={loading}
+      onClick={() => load(country, true)}
+    >
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+        <path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" />
+      </svg>
+      <span>Refresh</span>
+    </button>
+  );
+
+  const headerActions = <>{refreshButton}{copyButton}{sendButton}</>;
 
   let tables = null;
   if (d) {
