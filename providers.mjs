@@ -255,9 +255,16 @@ async function jrfCall(country, mkey, key = "JRF") {
 // = KRW per `rateUnit` units of the payout currency (rateUnit is the "100" in a
 // "100 VND" rate_currency, else 1). Cross quotes ONE rate for the whole corridor
 // (bank == wallet == cash), so it's a SINGLE_RATE provider mirrored onto every
-// method. We derive the principal from service_rate rather than the API's
-// `sending_amount`, which bakes in a first-remit bonus — so Cross is compared on
-// its standard rate like every other provider.
+// method.
+//
+// `includeBonus` picks WHICH price we publish, because Cross advertises a
+// standing first-transfer bonus (`topup_amount`, e.g. +100,000 VND):
+//   true  → the API's own `sending_amount`, i.e. the exact number a visitor sees
+//           on crossenf.com. Spot-checks against the website match.
+//   false → derived from service_rate, i.e. the standard rate a repeat customer
+//           pays — comparable with peers (GME/E9pay) that run no promo.
+// Default is `true`: the sheet is competitor intel that gets screenshotted, so it
+// must agree with the competitor's public site. Flip per corridor in countries.mjs.
 export function fetchCross(country, opts, key = "CROSS") {
   return limited("CROSS", `${country.code}|${key}`, () => crossCall(country, key), opts);
 }
@@ -278,8 +285,12 @@ async function crossCall(country, key = "CROSS") {
   if (Number(j.error_code) !== 0 || !j.data) throw new Error(`CROSS error: ${j.error || j.error_code}`);
   const rate = Number(j.data.service_rate); // KRW per `rateUnit` units of payout currency
   if (!rate) throw new Error("CROSS: no rate");
-  const principal = recv * rate / (cfg.rateUnit || 1); // excludes the first-remit bonus
-  return rec(key, mkey, principal, cfg.fee?.[mkey] ?? (Number(j.data.fee) || 0), rate, j.data);
+  // Website price (bonus applied) vs standard rate — see the note above.
+  const bonusPrice = Number(j.data.sending_amount);
+  const listPrice = recv * rate / (cfg.rateUnit || 1);
+  const useBonus = cfg.includeBonus !== false;
+  if (useBonus && !bonusPrice) throw new Error("CROSS: no sending_amount");
+  return rec(key, mkey, useBonus ? bonusPrice : listPrice, cfg.fee?.[mkey] ?? (Number(j.data.fee) || 0), rate, j.data);
 }
 
 // ---------- Orchestrator ----------
