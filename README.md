@@ -13,29 +13,29 @@ Cloudflare tunnel.
 
 ```mermaid
 flowchart TD
-    subgraph Client["Client pages (seeded from warm cache)"]
-        DASH["/ dashboard"]:::c
-        SHEET["/ranking sheet"]:::c
-        STATS["/stats"]:::c
+    subgraph Client["What people open"]
+        DASH["Dashboard page"]:::c
+        SHEET["Rate sheet page"]:::c
+        STATS["Usage page"]:::c
     end
 
-    subgraph Server["Next.js server"]
-        API["/api/ranking · /api/sheet · /rates"]:::s
-        CACHE["lib/cache.mjs<br/>SWR cache + warmer"]:::hot
-        ORCH["collectCountry()<br/>orchestrator"]:::s
-        LIM["limiter.mjs<br/>memo · dedupe · queue"]:::s
-        PROV["providers.mjs<br/>one fetcher per API"]:::s
-        CFG["countries.mjs<br/>corridors · channels · fees"]:::cfg
-        DISK[("STATE_DIR/*.json<br/>rank-cache · manual · fees")]:::disk
+    subgraph Server["Our app"]
+        API["Request handler"]:::s
+        CACHE["Fast memory<br/>of recent rates"]:::hot
+        ORCH["Rate collector"]:::s
+        LIM["Traffic controller"]:::s
+        PROV["Provider connectors"]:::s
+        CFG["Settings<br/>corridors · providers · fees"]:::cfg
+        DISK[("Saved copy on disk")]:::disk
     end
 
-    UP["upstream provider APIs<br/>GME · E9pay · Hanpass · Gmoney · SBI · JRF …"]:::up
+    UP["Money-transfer companies<br/>GME · E9pay · Hanpass · Gmoney · SBI · JRF …"]:::up
 
-    Client -->|poll| API --> CACHE
-    CACHE -->|stale / cold| ORCH --> LIM --> PROV --> UP
-    CFG -. drives .-> ORCH & PROV & LIM
-    CACHE <-->|persist / restore| DISK
-    WARM([background warmer]):::hot -->|one corridor at a time| CACHE
+    Client -->|ask for rates| API --> CACHE
+    CACHE -->|missing or too old| ORCH --> LIM --> PROV --> UP
+    CFG -. configures .-> ORCH & PROV & LIM
+    CACHE <-->|save / reload| DISK
+    WARM([auto-refresher]):::hot -->|one corridor at a time| CACHE
 
     classDef c fill:#eef4ff,stroke:#3a86ff,color:#1a1d24;
     classDef s fill:#f6f7f9,stroke:#8a8f98,color:#1a1d24;
@@ -60,16 +60,16 @@ Four files, four jobs:
 
 ```mermaid
 flowchart LR
-    C[countries.mjs<br/>corridor config] --> LOOP{for each<br/>provider}
-    LOOP -->|manual: true| M[skip — read from<br/>saved sheet values]
-    LOOP -->|api = cfg.api or key| K{fetcher kind}
-    K -->|per-method| PM["fetch per method<br/>GME · E9pay · Hanpass · Gmoney · JRF"]
-    K -->|single-rate| SR["fetch once, mirror onto<br/>every method — SBI · Coinshot …"]
-    PM & SR --> G[limiter.mjs governor]
-    G --> API[(upstream API)]
-    API --> REC["uniform record<br/>principalKRW · feeKRW · sendTotalKRW · rate"]
-    REC --> FEE[apply corridor fee table]
-    FEE --> OUT["{ records, errors }"]
+    C[Settings:<br/>who to check] --> LOOP{for each<br/>provider}
+    LOOP -->|typed in by hand| M[use the saved<br/>sheet value]
+    LOOP -->|has a live website| K{one rate, or<br/>one per payout type?}
+    K -->|per payout type| PM["check each type<br/>GME · E9pay · Hanpass · Gmoney · JRF"]
+    K -->|one rate| SR["check once, copy onto<br/>every type — SBI · Coinshot …"]
+    PM & SR --> G[traffic controller]
+    G --> API[(company website)]
+    API --> REC["one tidy result<br/>amount · fee · total"]
+    REC --> FEE[add our fee]
+    FEE --> OUT["results + any failures"]
 ```
 
 - Every fetcher returns the **same shape** — `sendTotalKRW = principalKRW + feeKRW`.
@@ -86,13 +86,13 @@ Every call passes three layers so upstreams are never hammered:
 
 ```mermaid
 flowchart LR
-    CALL[fetch request] --> MEMO{memo fresh<br/>within ttl?}
-    MEMO -->|hit| RET[return cached]
-    MEMO -->|miss| INF{identical call<br/>in flight?}
-    INF -->|yes| JOIN[await the same promise]
-    INF -->|no| Q[per-provider serial queue<br/>min gap between calls]
-    Q --> NET[(network)]
-    NET --> STORE[store in memo] --> RET
+    CALL[need a rate] --> MEMO{asked<br/>recently?}
+    MEMO -->|yes| RET[reuse the answer]
+    MEMO -->|no| INF{already asking<br/>right now?}
+    INF -->|yes| JOIN[wait for that one]
+    INF -->|no| Q[wait your turn<br/>one at a time, spaced out]
+    Q --> NET[(ask the company)]
+    NET --> STORE[remember the answer] --> RET
 ```
 
 Queues are **per-provider**, so a slow one never blocks the others. **GME is the
@@ -108,16 +108,16 @@ Policy is **stale-while-revalidate**: serve instantly, refresh in the background
 
 ```mermaid
 flowchart TD
-    REQ[request] --> Q{cache state?}
-    Q -->|fresh| SERVE[serve instantly]
-    Q -->|stale < MAX_STALE| SS[serve stale now] --> REV[revalidate in background]
-    Q -->|cold| SCRAPE[scrape now] --> FILL[fill cache + serve]
+    REQ[someone wants rates] --> Q{how old is<br/>our copy?}
+    Q -->|new enough| SERVE[send it now]
+    Q -->|a bit old| SS[send it now] --> REV[quietly refresh<br/>in the background]
+    Q -->|nothing yet| SCRAPE[fetch now] --> FILL[save + send]
     REV --> MEM
     FILL --> MEM
 
-    WARM([warmer · one corridor / rotation<br/>full cycle = CACHE_TTL]) --> MEM[("in-memory<br/>globalThis singleton")]
-    MEM -->|write| DISK[("STATE_DIR/rank-cache.json")]
-    DISK -->|restore on boot → warm start| MEM
+    WARM([auto-refresher<br/>one corridor per turn]) --> MEM[("fast memory")]
+    MEM -->|save| DISK[("copy on disk")]
+    DISK -->|reload on restart → starts warm| MEM
 ```
 
 - **Warmer** (`instrumentation.js`) refreshes one corridor at a time → upstream load is
@@ -140,23 +140,23 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant U as Browser / Excel
-    participant MW as middleware (auth)
-    participant API as /api/ranking
-    participant $ as SWR cache
-    participant O as collectCountry → limiter → providers
+    participant U as User (web / Excel)
+    participant MW as Login check
+    participant API as Request handler
+    participant $ as Fast memory
+    participant O as Rate collector
 
-    U->>MW: GET ?country=KH (cookie / token)
-    MW->>API: authorized
-    API->>$: get(KH)
-    alt fresh
-        $-->>U: cached rows
-    else stale / cold
-        $-->>U: stale rows (or wait if cold)
-        $->>O: revalidate in background
-        O-->>$: records → fees → cache + disk
+    U->>MW: ask for a corridor's rates
+    MW->>API: allowed in
+    API->>$: do we have it?
+    alt new enough
+        $-->>U: send saved rates
+    else old or missing
+        $-->>U: send old rates (or wait if none yet)
+        $->>O: refresh in the background
+        O-->>$: fresh rates → add fees → save
     end
-    Note over $: the warmer runs this same path on a rotation, with no user
+    Note over $: the auto-refresher runs this same path on a rotation, with nobody waiting
 ```
 
 ---
