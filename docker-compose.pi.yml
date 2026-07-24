@@ -34,8 +34,14 @@ services:
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-362187a34c27f358b24f720ccc501603:20d82f1e9f343b18fd59e45709faf67474747e561b0aa7f106afc3170a862787}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-09ee42f06e25717f9d1f8aaf89490d5ef8dd6fd41250bf5f}
-      - CACHE_TTL=${CACHE_TTL:-240}
-      - GME_TTL=${GME_TTL:-240}
+      # Freshness knobs — CACHE_TTL is the warmer's full-cycle time (one corridor
+      # every CACHE_TTL/9 s). Lower = fresher, more upstream calls.
+      # INVARIANT: keep GME_TTL and PROVIDER_TTL BELOW CACHE_TTL, else the warmer
+      # serves stale memo hits instead of re-fetching. GME is the anti-bot limit.
+      - CACHE_TTL=${CACHE_TTL:-120}
+      - GME_TTL=${GME_TTL:-100}
+      - PROVIDER_TTL=${PROVIDER_TTL:-80}
+      - MAX_STALE=${MAX_STALE:-900}
       # Teams webhook for the sheet's "Send to Teams" button (blank = hidden).
       - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
     # Loopback only — the Pi's cloudflared reaches it on 127.0.0.1:8787.
