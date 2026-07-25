@@ -137,7 +137,7 @@ export const COUNTRIES = {
     // Cross uses platform 76 (rate_currency "1 BDT" → rateUnit 1).
     providers: {
       GME:       { countryName: "Bangladesh", deliveryMethod: { BANK: "2" }, fee: { BANK: 5000 } },
-      E9PAY:     { nation: { BANK: "BD01" }, fee: { BANK: 5000 } },
+      E9PAY:     { nation: { BANK: "BD09" }, fee: { BANK: 5000 } }, // BD09/BD10 = bank (matches site); BD01 is a WRONG cheaper channel
       HANPASS:   { countryCode: "BD", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
       GMONEY:    { country: "Bangladesh", payment: { BANK: "Bank Account" }, fee: { BANK: 5000 } },
       JRF:       { type: { BANK: "Bank Transfer" }, fee: { BANK: 0 } },
