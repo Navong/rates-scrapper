@@ -91,7 +91,8 @@ function RateChart({ providers, visible, range, from, to }) {
 
   const rawMin = Math.min(...points.map((p) => p.v));
   const rawMax = Math.max(...points.map((p) => p.v));
-  const padding = Math.max(100, (rawMax - rawMin) * .08);
+  // Tight padding so small intraday moves aren't flattened by empty headroom.
+  const padding = Math.max(60, (rawMax - rawMin) * .03);
 
   return (
     <div className="shadcn-chart-container">
