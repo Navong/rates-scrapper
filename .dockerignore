@@ -10,3 +10,6 @@ tunnel-url.txt
 *.md
 *.bat
 redis-data
+rank-cache.json
+rate-history-*.jsonl
+events.jsonl

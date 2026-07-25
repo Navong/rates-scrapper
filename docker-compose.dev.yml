@@ -1,0 +1,22 @@
+# Development override: Next.js watches these bind-mounted sources and applies
+# edits through Fast Refresh. Rebuild only after package*.json or Dockerfile.dev
+# changes.
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: rate-backend-dev
+    command: npm run dev -- -H 0.0.0.0
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./app:/app/app
+      - ./lib:/app/lib
+      - ./public:/app/public
+      - ./scripts:/app/scripts
+      - ./middleware.ts:/app/middleware.ts
+      - ./instrumentation.ts:/app/instrumentation.ts
+      - ./next.config.mjs:/app/next.config.mjs
+      - ./postcss.config.mjs:/app/postcss.config.mjs
+      - ./tsconfig.json:/app/tsconfig.json

@@ -17,6 +17,8 @@ rates.csv
 # Runtime state (persisted app data — machine-specific, not source)
 data/
 events.jsonl
+rank-cache.json
+rate-history-*.jsonl
 tunnel-url.txt
 
 # Other tools / editors
