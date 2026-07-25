@@ -42,14 +42,15 @@ services:
       - GME_TTL=${GME_TTL:-100}
       - PROVIDER_TTL=${PROVIDER_TTL:-80}
       - MAX_STALE=${MAX_STALE:-900}
-      # Shared cache store (durable + cross-instance). Unset to fall back to
-      # in-memory + rank-cache.json (single instance).
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Shared cache store (see .env.example). Hosted Redis (Upstash): put the
+      # rediss://… URL in .env — shared across machines, no local container.
+      # Local Redis: `--profile local-redis` + REDIS_URL=redis://redis:6379.
+      # Unset: in-memory + rank-cache.json (single instance).
+      - REDIS_URL=${REDIS_URL:-}
+      # Only the warmer "leader" scrapes; on a viewer-only box set WARMER=off.
+      - WARMER=${WARMER:-}
       # Teams webhook for the sheet's "Send to Teams" button (blank = hidden).
       - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
-    depends_on:
-      redis:
-        condition: service_healthy
     # Loopback only — the Pi's cloudflared reaches it on 127.0.0.1:8787.
     # (To hit it from other LAN machines instead, change to "8787:8787".)
     ports:
@@ -64,13 +65,15 @@ services:
       timeout: 5s
       retries: 3
 
-  # Shared cache / state store (arm64 image pulled automatically). AOF persists.
+  # Optional self-hosted store — only with `--profile local-redis`.
+  # Skip it when REDIS_URL points at a hosted Redis (Upstash). AOF persists.
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - ./redis-data:/data
     restart: unless-stopped
+    profiles: ["local-redis"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s

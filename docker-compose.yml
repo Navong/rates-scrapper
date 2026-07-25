@@ -38,16 +38,18 @@ services:
       - PROVIDER_TTL=${PROVIDER_TTL:-80}
       - MAX_STALE=${MAX_STALE:-900}
       - STATE_DIR=/data
-      # Shared cache store. With REDIS_URL set, the corridor cache is durable in
-      # Redis and shared across instances (leader-gated warmer). Unset it to fall
-      # back to in-memory + the rank-cache.json file (single instance).
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Shared cache store (see .env.example). Three modes:
+      #   • hosted (Upstash, etc.): put the rediss://… URL in .env → shared across
+      #     machines, nothing to run locally.
+      #   • local Redis: `docker compose --profile local-redis up -d` and set
+      #     REDIS_URL=redis://redis:6379 in .env.
+      #   • unset: in-memory + rank-cache.json file, single instance.
+      # Only the warmer "leader" scrapes; set WARMER=off on any extra viewer.
+      - REDIS_URL=${REDIS_URL:-}
+      - WARMER=${WARMER:-}
       # Teams Incoming Webhook / Workflow URL for the sheet's "Send to Teams"
       # button (blank = button hidden). Create it on the channel, then set in .env.
       - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
-    depends_on:
-      redis:
-        condition: service_healthy
     # Publish on BOTH loopback families so the host cloudflared service reaches it
     # whether it resolves localhost to 127.0.0.1 (IPv4) or ::1 (IPv6).
     # Loopback-only — not exposed to the LAN.
@@ -66,13 +68,16 @@ services:
       timeout: 5s
       retries: 3
 
-  # Shared cache / state store. AOF on so it survives a restart.
+  # Optional self-hosted store — only starts with `--profile local-redis`.
+  # (Skip it entirely when REDIS_URL points at a hosted Redis like Upstash.)
+  # AOF on so it survives a restart.
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - ./redis-data:/data
     restart: unless-stopped
+    profiles: ["local-redis"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
