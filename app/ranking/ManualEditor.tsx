@@ -9,6 +9,26 @@ import { useRef, useState } from "react";
 
 const fmt = (n) => Number(n).toLocaleString("en-US");
 
+// Add thousands separators while preserving the caret's logical position among
+// the digits. This works for typing, deleting, and pasted values with/without
+// existing commas.
+function formatRateInput(e) {
+  const input = e.currentTarget;
+  const raw = input.value;
+  const caret = input.selectionStart ?? raw.length;
+  const digitsBeforeCaret = raw.slice(0, caret).replace(/\D/g, "").length;
+  const digits = raw.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+  const formatted = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+  input.value = formatted;
+  let nextCaret = 0, seenDigits = 0;
+  while (nextCaret < formatted.length && seenDigits < digitsBeforeCaret) {
+    if (/\d/.test(formatted[nextCaret])) seenDigits++;
+    nextCaret++;
+  }
+  input.setSelectionRange(nextCaret, nextCaret);
+}
+
 export default function ManualEditor({ code, cards, onSaved }) {
   const formRef = useRef(null);
   const [warnings, setWarnings] = useState(null);
@@ -18,7 +38,8 @@ export default function ManualEditor({ code, cards, onSaved }) {
     const form = formRef.current;
     if (!form) return;
     setMsg("Saving…");
-    const data = new URLSearchParams(new FormData(form));
+    const data = new URLSearchParams();
+    for (const [key, value] of new FormData(form)) data.set(key, String(value));
     if (confirm) data.set("confirm", "1");
     try {
       const r = await fetch(`/manual?country=${code}&format=json`, {
@@ -69,7 +90,8 @@ export default function ManualEditor({ code, cards, onSaved }) {
                   : <span className="mst old">{c.status === "unset" ? "not set" : "expired"}</span>}
               </span>
               <input name={c.name} type="text" inputMode="numeric" pattern="[0-9,]*"
-                defaultValue={c.value} placeholder="base KRW" autoComplete="off" />
+                defaultValue={c.value} placeholder="base KRW" autoComplete="off"
+                onInput={formatRateInput} />
               <span className="mfee">+ {c.fee.toLocaleString()} fee</span>
             </label>
           ))}
