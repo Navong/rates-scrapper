@@ -64,6 +64,21 @@ function HourlyDot({ cx, cy, payload, stroke }: any) {
   return <circle cx={cx} cy={cy} r={3.5} fill="var(--card)" stroke={stroke} strokeWidth={2} />;
 }
 
+export function HistoryChartSkeleton() {
+  return (
+    <div className="history-chart-skeleton" aria-busy="true" aria-label="Loading rate graph">
+      <div className="history-skeleton-legend">
+        {Array.from({ length: 5 }).map((_, i) => <span className="sk" key={i} />)}
+      </div>
+      <div className="history-skeleton-chart sk">
+        <span className="history-skeleton-line line-one" />
+        <span className="history-skeleton-line line-two" />
+        <span className="history-skeleton-line line-three" />
+      </div>
+    </div>
+  );
+}
+
 function RateChart({ providers, visible, range, from, to, mode }) {
   const shown = providers.filter((p) => visible.has(p.key) && p.points.length);
   const points = shown.flatMap((p) => p.points);
@@ -312,21 +327,25 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
         </div>
 
         {error ? <div className="warn">Failed to load history: {error}</div> : null}
-        <div className="history-legend">
-          {(data?.providers || []).map((p, i) => (
-            <button key={p.key} className={visible.has(p.key) ? "on" : ""} onClick={() => toggleProvider(p.key)}>
-              <span style={{ background: colorFor(p.key, i) }} />{p.label}
-            </button>
-          ))}
-        </div>
-        <RateChart
-          providers={data?.providers || []}
-          visible={visible}
-          range={range}
-          from={data?.from}
-          to={data?.to}
-          mode={mode}
-        />
+        {loading ? <HistoryChartSkeleton /> : (
+          <>
+            <div className="history-legend">
+              {(data?.providers || []).map((p, i) => (
+                <button key={p.key} className={visible.has(p.key) ? "on" : ""} onClick={() => toggleProvider(p.key)}>
+                  <span style={{ background: colorFor(p.key, i) }} />{p.label}
+                </button>
+              ))}
+            </div>
+            <RateChart
+              providers={data?.providers || []}
+              visible={visible}
+              range={range}
+              from={data?.from}
+              to={data?.to}
+              mode={mode}
+            />
+          </>
+        )}
       </section>
 
       <SiteFooter note="History begins collecting after this feature is deployed; manual entries are never included." />
