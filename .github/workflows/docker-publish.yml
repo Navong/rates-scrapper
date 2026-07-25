@@ -64,11 +64,12 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
-          # Keep an independent cache for each native architecture. This lets
-          # unchanged dependency and build layers survive between releases
-          # without AMD64 and ARM64 overwriting one another's cache records.
+          # Reuse the per-architecture dependency cache populated by v1.1.6.
+          # Do not export mode=max on every release: the source layer changes on
+          # each tag, so uploading the large builder cache cost more time than
+          # it saved. The small standalone runtime image is pushed directly.
           cache-from: type=gha,scope=rate-scraper-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,scope=rate-scraper-${{ matrix.platform }}
+          provenance: false
 
       - name: Export digest
         run: |
