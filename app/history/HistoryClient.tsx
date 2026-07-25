@@ -31,23 +31,26 @@ const signed = (v) => {
   return r === 0 ? "₩0" : `${r > 0 ? "+" : "−"}₩${Math.abs(r).toLocaleString("en-US")}`;
 };
 
-function RateTooltip({ active, payload, label }: any) {
+function RateTooltip({ active, payload, label, mode }: any) {
   if (!active || !payload?.length) return null;
   const interpolated = payload[0]?.payload?._interpolated;
   const shownPayload = payload.slice(0, 8);
   const remaining = payload.length - shownPayload.length;
+  const fmt = (item) => mode === "movement"
+    ? `${signed(item.value)}  (${money(item.payload?.[`${item.dataKey}__abs`])})`
+    : money(item.value);
   return (
     <div className="shadcn-chart-tooltip">
       <div className="tooltip-time">
         {new Date(Number(label)).toLocaleString("en-US", {
           month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-        })} · vs average
+        })}{mode === "movement" ? " · vs average" : ""}
       </div>
       {shownPayload.map((item) => (
         <div className="tooltip-row" key={item.dataKey}>
           <span className="tooltip-dot" style={{ background: item.color }} />
           <span>{item.name}</span>
-          <b>{signed(item.value)}  ({money(item.payload?.[`${item.dataKey}__abs`])})</b>
+          <b>{fmt(item)}</b>
         </div>
       ))}
       {remaining > 0 ? <div className="tooltip-more">+{remaining} more providers</div> : null}
@@ -61,13 +64,13 @@ function HourlyDot({ cx, cy, payload, stroke }: any) {
   return <circle cx={cx} cy={cy} r={3.5} fill="var(--card)" stroke={stroke} strokeWidth={2} />;
 }
 
-function RateChart({ providers, visible, range, from, to }) {
+function RateChart({ providers, visible, range, from, to, mode }) {
   const shown = providers.filter((p) => visible.has(p.key) && p.points.length);
   const points = shown.flatMap((p) => p.points);
   const chartData = useMemo(() => {
-    // Plot each provider's deviation from its own average so tiny moves aren't
-    // flattened by the big price gap between providers. The absolute value is
-    // kept alongside (…__abs) so the tooltip can still show real prices.
+    // "movement" plots each provider's deviation from its own average so tiny
+    // moves aren't flattened by the big price gap between providers; "price" plots
+    // absolute KRW. The absolute value is kept alongside (…__abs) for the tooltip.
     const mean = {};
     for (const p of shown) mean[p.key] = p.points.reduce((s, pt) => s + pt.v, 0) / p.points.length;
 
@@ -75,7 +78,7 @@ function RateChart({ providers, visible, range, from, to }) {
     for (const provider of shown) {
       for (const point of provider.points) {
         const row = byTime.get(point.t) || { t: point.t };
-        row[provider.key] = point.v - mean[provider.key];
+        row[provider.key] = mode === "movement" ? point.v - mean[provider.key] : point.v;
         row[`${provider.key}__abs`] = point.v;
         byTime.set(point.t, row);
       }
@@ -104,7 +107,7 @@ function RateChart({ providers, visible, range, from, to }) {
     }
     if (rows.length) dense.push(rows[rows.length - 1]);
     return dense;
-  }, [shown]);
+  }, [shown, mode]);
 
   // Real (non-interpolated) point count — used to hide dots when the line is dense.
   const realCount = chartData.filter((r) => !r._interpolated).length;
@@ -148,13 +151,13 @@ function RateChart({ providers, visible, range, from, to }) {
             axisLine={false}
             tickMargin={8}
             width={72}
-            tickFormatter={(v) => signed(v)}
+            tickFormatter={(v) => mode === "movement" ? signed(v) : `${Math.round(v / 1000)}k`}
           />
           <Tooltip
             shared
             trigger="hover"
             cursor={false}
-            content={<RateTooltip />}
+            content={<RateTooltip mode={mode} />}
             isAnimationActive
             animationDuration={120}
             animationEasing="ease-out"
@@ -194,6 +197,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
   const [country, setCountry] = useState(initialCountry);
   const [method, setMethod] = useState(initialMethod);
   const [range, setRange] = useState(initialRange);
+  const [mode, setMode] = useState("movement"); // "price" | "movement"
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -290,8 +294,15 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
 
       <section className={`panel history-panel${loading ? " loading" : ""}`}>
         <div className="history-panel-head">
-          <div><h2>Rate movement</h2><p>Deviation from each provider's average · 10-minute points</p></div>
+          <div>
+            <h2>{mode === "movement" ? "Rate movement" : "Total KRW trend"}</h2>
+            <p>{mode === "movement" ? "Deviation from each provider's average" : "Total KRW required"} · 10-minute points</p>
+          </div>
           <div className="history-actions">
+            <div className="history-range" aria-label="Graph value mode">
+              <button className={mode === "movement" ? "on" : ""} onClick={() => setMode("movement")}>Movement</button>
+              <button className={mode === "price" ? "on" : ""} onClick={() => setMode("price")}>Price</button>
+            </div>
             <div className="history-range" aria-label="Graph time range">
               <button className={range === "today" ? "on" : ""} onClick={() => changeRange("today")}>Today</button>
               <button className={range === "7d" ? "on" : ""} onClick={() => changeRange("7d")}>7 days</button>
@@ -314,6 +325,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
           range={range}
           from={data?.from}
           to={data?.to}
+          mode={mode}
         />
       </section>
 
