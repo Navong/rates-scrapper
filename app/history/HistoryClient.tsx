@@ -23,12 +23,14 @@ import {
 
 const PROVIDER_COLOR = {
   GME: "#ef1642", E9PAY: "#3b82f6", GMONEY: "#9333ea", HANPASS: "#10b981",
-  SBI: "#f59e0b", JRF: "#0ea5e9", CROSS: "#db2777",
+  SBI: "#f59e0b", JRF: "#0ea5e9", CROSS: "#84cc16",
   COINSHOT: "#14b8a6", UTRANSFER: "#f97316", PANDA: "#4b5563",
 };
-const FALLBACK = ["#64748b", "#e11d48", "#2563eb", "#059669", "#d97706"];
+// Red is reserved for the GME family so its line is always identifiable.
+const FALLBACK = ["#64748b", "#6366f1", "#2563eb", "#059669", "#d97706"];
 const colorFor = (key, index = 0) =>
   PROVIDER_COLOR[key] || PROVIDER_COLOR[String(key).split("_")[0]] || FALLBACK[index % FALLBACK.length];
+const isGme = (key) => String(key).split("_")[0] === "GME";
 const money = (value) => `₩${Math.round(value).toLocaleString("en-US")}`;
 const signed = (value) => {
   const rounded = Math.round(value);
@@ -152,7 +154,7 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
             />
           }
         />
-        {chartProviders.map((provider) => {
+        {[...chartProviders].sort((left, right) => Number(isGme(left.key)) - Number(isGme(right.key))).map((provider) => {
           const id = `fill-${provider.key.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
           const color = colorFor(provider.key, providers.indexOf(provider));
           return (
