@@ -8,10 +8,10 @@
 #   3) docker compose -f docker-compose.pi.yml up -d
 #   4) curl -s localhost:8787/health
 #
-# Update to a new release later:
-#   1) bump the `image:` tag below (e.g. v1.0.0 → v1.0.1)
-#   2) docker compose -f docker-compose.pi.yml pull && \
-#      docker compose -f docker-compose.pi.yml up -d
+# Update to a new release later — one command (see pi-update.sh):
+#   ./pi-update.sh v1.0.1     # repin + pull + recreate + prune + health check
+#   ./pi-update.sh            # redeploy the currently pinned tag
+# (equivalent to: bump the `image:` tag below, then `… pull && … up -d`.)
 #
 # ONE INSTANCE ONLY: if this Pi is serving, stop the Windows container
 # (docker compose down) — two warmers scraping in parallel upsets GME.

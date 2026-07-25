@@ -193,10 +193,11 @@ Runs as one Docker container behind a Cloudflare tunnel on `127.0.0.1:8787`, fro
 **residential IP** (some providers, e.g. SBI, block datacenter IPs).
 
 ```bash
-docker compose up -d --build                       # local / dev host
+docker compose up -d --build     # local / dev host — builds from source
 
-docker compose -f docker-compose.pi.yml pull       # Raspberry Pi (arm64) — pre-built image
-docker compose -f docker-compose.pi.yml up -d
+# Raspberry Pi (arm64) — pulls the pre-built image, no build. One command:
+./pi-update.sh                   # redeploy the pinned version
+./pi-update.sh v1.0.1            # switch to v1.0.1, then redeploy
 ```
 
 **Releases are tag-driven:** push a `vX.Y.Z` git tag → GitHub Actions builds a multi-arch
