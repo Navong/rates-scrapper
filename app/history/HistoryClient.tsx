@@ -36,7 +36,7 @@ function RateTooltip({ active, payload, label }: any) {
         </div>
       ))}
       {remaining > 0 ? <div className="tooltip-more">+{remaining} more providers</div> : null}
-      {interpolated ? <div className="tooltip-estimate">Between 5-min snapshots</div> : null}
+      {interpolated ? <div className="tooltip-estimate">Between 30-min snapshots</div> : null}
     </div>
   );
 }
@@ -58,13 +58,13 @@ function RateChart({ providers, visible, range, from, to }) {
         byTime.set(point.t, row);
       }
     }
-    // Points are already 5-minute spaced from the backend — plot them directly.
+    // Points are already 30-minute spaced from the backend — plot them directly.
     const rows = [...byTime.values()].sort((a, b) => a.t - b.t);
 
-    // Recharts activates an axis tooltip at data rows. Add 1-minute interpolated
-    // hover positions between the real 5-minute rows so the tooltip works along
-    // the whole line rather than only at each point.
-    const step = 60 * 1000;
+    // Recharts activates an axis tooltip at data rows. Add interpolated hover
+    // positions between the real 30-minute rows so the tooltip works along the
+    // whole line rather than only at each point.
+    const step = 5 * 60 * 1000;
     const dense = [];
     for (let i = 0; i < rows.length - 1; i++) {
       const a = rows[i], b = rows[i + 1];
@@ -260,7 +260,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
 
       <section className={`panel history-panel${loading ? " loading" : ""}`}>
         <div className="history-panel-head">
-          <div><h2>Total KRW trend</h2><p>Automatic providers only · 5-minute points</p></div>
+          <div><h2>Total KRW trend</h2><p>Automatic providers only · 30-minute points</p></div>
           <div className="history-actions">
             <div className="history-range" aria-label="Graph time range">
               <button className={range === "today" ? "on" : ""} onClick={() => changeRange("today")}>Today</button>
