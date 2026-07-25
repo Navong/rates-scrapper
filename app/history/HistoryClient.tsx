@@ -106,14 +106,14 @@ function RateChart({ providers, visible, range, from, to }) {
             dataKey="t"
             type="number"
             scale="time"
-            domain={[Number(from) || "dataMin", Number(to) || "dataMax"]}
+            domain={["dataMin", "dataMax"]}
             allowDataOverflow
             tickLine={false}
             axisLine={false}
             minTickGap={38}
             tickMargin={8}
             tickFormatter={(t) => range === "today"
-              ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric" })
+              ? new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
               : new Date(t).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric" })}
           />
           <YAxis
