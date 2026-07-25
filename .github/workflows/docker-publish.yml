@@ -64,6 +64,11 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+          # Keep an independent cache for each native architecture. This lets
+          # unchanged dependency and build layers survive between releases
+          # without AMD64 and ARM64 overwriting one another's cache records.
+          cache-from: type=gha,scope=rate-scraper-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=rate-scraper-${{ matrix.platform }}
 
       - name: Export digest
         run: |
