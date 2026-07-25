@@ -16,23 +16,32 @@ import { AppHeader, SiteFooter } from "@/lib/ui";
 const COLORS = ["#e4002b", "#3a86ff", "#12b886", "#8e24aa", "#f59f00", "#00a8a8", "#e8590c", "#495057", "#d6336c", "#5f3dc4"];
 const money = (v) => `₩${Math.round(v).toLocaleString("en-US")}`;
 
-function RateTooltip({ active, payload, label }: any) {
+const signed = (v) => {
+  const r = Math.round(v);
+  return r === 0 ? "₩0" : `${r > 0 ? "+" : "−"}₩${Math.abs(r).toLocaleString("en-US")}`;
+};
+
+function RateTooltip({ active, payload, label, mode }: any) {
   if (!active || !payload?.length) return null;
   const interpolated = payload[0]?.payload?._interpolated;
   const shownPayload = payload.slice(0, 8);
   const remaining = payload.length - shownPayload.length;
+  const fmt = (item) => mode === "movement"
+    ? `${signed(item.value)}  (${money(item.payload?.[`${item.dataKey}__abs`])})`
+    : money(item.value);
   return (
     <div className="shadcn-chart-tooltip">
       <div className="tooltip-time">
         {new Date(Number(label)).toLocaleString("en-US", {
           month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
         })}
+        {mode === "movement" ? " · vs average" : ""}
       </div>
       {shownPayload.map((item) => (
         <div className="tooltip-row" key={item.dataKey}>
           <span className="tooltip-dot" style={{ background: item.color }} />
           <span>{item.name}</span>
-          <b>{money(item.value)}</b>
+          <b>{fmt(item)}</b>
         </div>
       ))}
       {remaining > 0 ? <div className="tooltip-more">+{remaining} more providers</div> : null}
@@ -46,19 +55,25 @@ function HourlyDot({ cx, cy, payload, stroke }: any) {
   return <circle cx={cx} cy={cy} r={3.5} fill="var(--card)" stroke={stroke} strokeWidth={2} />;
 }
 
-function RateChart({ providers, visible, range, from, to }) {
+function RateChart({ providers, visible, range, from, to, mode }) {
   const shown = providers.filter((p) => visible.has(p.key) && p.points.length);
   const points = shown.flatMap((p) => p.points);
   const chartData = useMemo(() => {
+    // "movement" plots each provider's deviation from its own average so tiny
+    // moves aren't flattened by the big price gap between providers. The absolute
+    // value is kept alongside (…__abs) so the tooltip can still show real prices.
+    const mean = {};
+    for (const p of shown) mean[p.key] = p.points.reduce((s, pt) => s + pt.v, 0) / p.points.length;
+
     const byTime = new Map();
     for (const provider of shown) {
       for (const point of provider.points) {
         const row = byTime.get(point.t) || { t: point.t };
-        row[provider.key] = point.v;
+        row[provider.key] = mode === "movement" ? point.v - mean[provider.key] : point.v;
+        row[`${provider.key}__abs`] = point.v;
         byTime.set(point.t, row);
       }
     }
-    // Points are already 30-minute spaced from the backend — plot them directly.
     const rows = [...byTime.values()].sort((a, b) => a.t - b.t);
 
     // Recharts activates an axis tooltip at data rows. Add interpolated hover
@@ -75,13 +90,15 @@ function RateChart({ providers, visible, range, from, to }) {
         for (const provider of shown) {
           const av = a[provider.key], bv = b[provider.key];
           if (Number.isFinite(av) && Number.isFinite(bv)) row[provider.key] = av + (bv - av) * ratio;
+          const aa = a[`${provider.key}__abs`], ba = b[`${provider.key}__abs`];
+          if (Number.isFinite(aa) && Number.isFinite(ba)) row[`${provider.key}__abs`] = aa + (ba - aa) * ratio;
         }
         dense.push(row);
       }
     }
     if (rows.length) dense.push(rows[rows.length - 1]);
     return dense;
-  }, [shown]);
+  }, [shown, mode]);
 
   // Real (non-interpolated) point count — used to hide dots when the line is dense.
   const realCount = chartData.filter((r) => !r._interpolated).length;
@@ -89,9 +106,11 @@ function RateChart({ providers, visible, range, from, to }) {
 
   if (!points.length) return <div className="history-empty">No automatic rate history has been collected for this selection yet.</div>;
 
-  const rawMin = Math.min(...points.map((p) => p.v));
-  const rawMax = Math.max(...points.map((p) => p.v));
-  // Tight padding so small intraday moves aren't flattened by empty headroom.
+  // Range from the PLOTTED values (absolute in price mode, deviation in movement),
+  // with tight padding so small intraday moves aren't flattened by empty headroom.
+  const plotted = chartData.flatMap((r) => shown.map((p) => r[p.key])).filter(Number.isFinite);
+  const rawMin = plotted.length ? Math.min(...plotted) : 0;
+  const rawMax = plotted.length ? Math.max(...plotted) : 0;
   const padding = Math.max(60, (rawMax - rawMin) * .03);
 
   return (
@@ -122,14 +141,14 @@ function RateChart({ providers, visible, range, from, to }) {
             tickLine={false}
             axisLine={false}
             tickMargin={8}
-            width={62}
-            tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+            width={72}
+            tickFormatter={(v) => mode === "movement" ? signed(v) : `${Math.round(v / 1000)}k`}
           />
           <Tooltip
             shared
             trigger="hover"
             cursor={false}
-            content={<RateTooltip />}
+            content={<RateTooltip mode={mode} />}
             isAnimationActive
             animationDuration={120}
             animationEasing="ease-out"
@@ -164,6 +183,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
   const [country, setCountry] = useState(initialCountry);
   const [method, setMethod] = useState(initialMethod);
   const [range, setRange] = useState(initialRange);
+  const [mode, setMode] = useState("movement"); // "price" | "movement"
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -262,6 +282,10 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
         <div className="history-panel-head">
           <div><h2>Total KRW trend</h2><p>Automatic providers only · 30-minute points</p></div>
           <div className="history-actions">
+            <div className="history-range" aria-label="Graph value mode">
+              <button className={mode === "price" ? "on" : ""} onClick={() => setMode("price")}>Price</button>
+              <button className={mode === "movement" ? "on" : ""} onClick={() => setMode("movement")}>Movement</button>
+            </div>
             <div className="history-range" aria-label="Graph time range">
               <button className={range === "today" ? "on" : ""} onClick={() => changeRange("today")}>Today</button>
               <button className={range === "7d" ? "on" : ""} onClick={() => changeRange("7d")}>7 days</button>
@@ -284,6 +308,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
           range={range}
           from={data?.from}
           to={data?.to}
+          mode={mode}
         />
       </section>
 
