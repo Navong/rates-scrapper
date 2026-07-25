@@ -160,25 +160,30 @@ function RateChart({ providers, visible, range, from, to }) {
             animationEasing="ease-out"
             allowEscapeViewBox={{ x: false, y: false }}
           />
-          {shown.map((provider) => {
-            const color = colorFor(provider.key, providers.findIndex((p) => p.key === provider.key));
-            return (
-              <Line
-                key={provider.key}
-                dataKey={provider.key}
-                name={provider.label}
-                type="natural"
-                stroke={color}
-                strokeWidth={2}
-                dot={showDots ? <HourlyDot /> : false}
-                activeDot={{ r: 5, fill: "var(--card)", strokeWidth: 2 }}
-                connectNulls
-                isAnimationActive
-                animationDuration={550}
-                animationEasing="ease-out"
-              />
-            );
-          })}
+          {/* Render GME (the anchor) LAST so its line sits on top and is never
+              hidden where the movement lines overlap near zero. */}
+          {[...shown]
+            .sort((a, b) => (String(a.key).split("_")[0] === "GME" ? 1 : 0) - (String(b.key).split("_")[0] === "GME" ? 1 : 0))
+            .map((provider) => {
+              const isGme = String(provider.key).split("_")[0] === "GME";
+              const color = colorFor(provider.key, providers.findIndex((p) => p.key === provider.key));
+              return (
+                <Line
+                  key={provider.key}
+                  dataKey={provider.key}
+                  name={provider.label}
+                  type="natural"
+                  stroke={color}
+                  strokeWidth={isGme ? 3 : 2}
+                  dot={showDots ? <HourlyDot /> : false}
+                  activeDot={{ r: 5, fill: "var(--card)", strokeWidth: 2 }}
+                  connectNulls
+                  isAnimationActive
+                  animationDuration={550}
+                  animationEasing="ease-out"
+                />
+              );
+            })}
         </LineChart>
       </ResponsiveContainer>
     </div>
