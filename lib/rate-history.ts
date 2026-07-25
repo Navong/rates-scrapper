@@ -8,14 +8,20 @@ import { redisEnabled, rpushCapped, ltail } from "./redis";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-const REDIS_CAP = 6500; // comfortably covers a 2-minute warmer for seven days
+const SNAPSHOT_INTERVAL_MS = 5 * 60 * 1000;    // sample history every 5 minutes
+const REDIS_CAP = 2400;                        // ≈ 8 days of 5-minute snapshots
 const RKEY = (code) => `rate-history:${code}`;
 const FILE = (code) => join(STATE_DIR, `rate-history-${code}.jsonl`);
 const lastCompact = new Map();
+const lastSnapshot = new Map();
 
 const finite = (value) => Number.isFinite(Number(value));
 
 export async function recordRateSnapshot(country, records, at = Date.now()) {
+  // The warmer scrapes often to keep the live cache fresh, but history only needs
+  // periodic points — sample at most once per SNAPSHOT_INTERVAL_MS per corridor.
+  if (at - (lastSnapshot.get(country.code) || 0) < SNAPSHOT_INTERVAL_MS) return;
+
   const rows = records
     .filter((r) => !r.carried && !country.providers[r.provider]?.manual)
     .filter((r) => finite(r.sendTotalKRW) && finite(r.rate))
@@ -26,6 +32,7 @@ export async function recordRateSnapshot(country, records, at = Date.now()) {
       rate: Number(r.rate),
     }));
   if (!rows.length) return;
+  lastSnapshot.set(country.code, at);
 
   const snapshot = { t: at, rows };
   if (redisEnabled()) {
@@ -74,9 +81,9 @@ export async function readRateHistory(country, method, range = "today") {
     .filter((s) => Number(s.t) >= cutoff && Array.isArray(s.rows))
     .sort((a, b) => Number(a.t) - Number(b.t));
 
-  // One point per hour keeps the seven-day SVG readable while still showing
-  // meaningful intraday provider movement.
-  const bucketMs = 60 * 60 * 1000;
+  // Today shows the 5-minute snapshots directly; the seven-day view rolls up to
+  // one point per hour so the chart stays readable.
+  const bucketMs = range === "today" ? SNAPSHOT_INTERVAL_MS : 60 * 60 * 1000;
   const buckets = new Map();
   for (const snap of snapshots) {
     const t = Math.floor(Number(snap.t) / bucketMs) * bucketMs;
