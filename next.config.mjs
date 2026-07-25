@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Emit a traced production server so the runtime Docker image only needs the
+  // files and node_modules entries actually used by the app.
+  output: "standalone",
+
   // The legacy HTML renderers (theme.mjs + the render halves of ranking.mjs) and
   // the standalone Office Scripts (integrations/office-scripts/*.ts) live beside
   // the app but aren't part of the build graph. Skip type/lint gating so a stray

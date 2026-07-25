@@ -238,10 +238,13 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
   useEffect(() => {
     if (!didMount.current) {
       didMount.current = true;
+      if (data) return;
+      load(country, method, range);
       return;
     }
     const first = methods[0]?.key;
     if (!first) return;
+    setData(null);
     setMethod(first);
     window.history.replaceState(null, "", `/history?country=${country}&method=${first}&range=${range}`);
     load(country, first, range);
@@ -327,7 +330,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
         </div>
 
         {error ? <div className="warn">Failed to load history: {error}</div> : null}
-        {loading ? <HistoryChartSkeleton /> : (
+        {!data || loading ? <HistoryChartSkeleton /> : (
           <>
             <div className="history-legend">
               {(data?.providers || []).map((p, i) => (

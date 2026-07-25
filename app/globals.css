@@ -492,15 +492,6 @@ label { font-weight: 600; display: block; margin-top: 16px; font-size: 14px; }
 .history-skeleton-line.line-one { top: 30%; transform: rotate(-2deg); }
 .history-skeleton-line.line-two { top: 52%; transform: rotate(1.5deg); }
 .history-skeleton-line.line-three { top: 70%; transform: rotate(-1deg); }
-.history-route-head { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
-.history-route-head .sk:first-child { width: 250px; height: 42px; }
-.history-route-head .sk:last-child { width: 210px; height: 34px; }
-.history-route-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-.history-route-stats .sk { height: 62px; }
-.history-route-picker { height: 96px; margin-bottom: 14px; }
-.history-route-title { width: 150px; height: 20px; border-radius: 7px; }
-.history-route-subtitle { width: 240px; height: 13px; margin-top: 7px; border-radius: 5px; }
-.history-route-actions { width: 330px; height: 42px; border-radius: 11px; }
 .shadcn-chart-container {
   width: 100%; height: 390px; margin-top: 4px; color: var(--muted);
   font-size: 11px; font-variant-numeric: tabular-nums; overflow: hidden; border-radius: 10px;
@@ -562,9 +553,6 @@ label { font-weight: 600; display: block; margin-top: 16px; font-size: 14px; }
   .history-actions { align-items: stretch; flex-direction: column; }
   .history-range { display: grid; grid-template-columns: 1fr 1fr; }
   .history-panel-head .btn { justify-content: center; }
-  .history-route-head .sk:last-child { display: none; }
-  .history-route-stats { grid-template-columns: repeat(2, 1fr); }
-  .history-route-actions { width: 100%; }
 }
 
 .pipelinepage .pipeexplain { margin-bottom: 14px; font-size: 13.5px; line-height: 1.6; color: var(--text); }
