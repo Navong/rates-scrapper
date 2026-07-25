@@ -42,15 +42,17 @@ services:
       - GME_TTL=${GME_TTL:-100}
       - PROVIDER_TTL=${PROVIDER_TTL:-80}
       - MAX_STALE=${MAX_STALE:-900}
-      # Shared cache store (see .env.example). Hosted Redis (Upstash): put the
-      # rediss://… URL in .env — shared across machines, no local container.
-      # Local Redis: `--profile local-redis` + REDIS_URL=redis://redis:6379.
-      # Unset: in-memory + rank-cache.json (single instance).
-      - REDIS_URL=${REDIS_URL:-}
+      # The Pi hosts the shared Redis (the `redis` service below). Other machines
+      # point their REDIS_URL at this Pi's IP to share the same data; here the
+      # backend reaches it in-network at redis://redis:6379.
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       # Only the warmer "leader" scrapes; on a viewer-only box set WARMER=off.
       - WARMER=${WARMER:-}
       # Teams webhook for the sheet's "Send to Teams" button (blank = hidden).
       - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
+    depends_on:
+      redis:
+        condition: service_healthy
     # Loopback only — the Pi's cloudflared reaches it on 127.0.0.1:8787.
     # (To hit it from other LAN machines instead, change to "8787:8787".)
     ports:
@@ -65,15 +67,19 @@ services:
       timeout: 5s
       retries: 3
 
-  # Optional self-hosted store — only with `--profile local-redis`.
-  # Skip it when REDIS_URL points at a hosted Redis (Upstash). AOF persists.
+  # Shared store, hosted ON the Pi. AOF persists across restarts.
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - ./redis-data:/data
     restart: unless-stopped
-    profiles: ["local-redis"]
+    # Expose so OTHER machines (the PC) can use this same Redis. REDIS_BIND
+    # defaults to 127.0.0.1 (Pi-only, safe). Set it to the Pi's private IP to
+    # share — a Tailscale/WireGuard IP is safest; a LAN IP works on a trusted
+    # network. Redis has no password here, so DON'T bind it to a public IP.
+    ports:
+      - "${REDIS_BIND:-127.0.0.1}:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s

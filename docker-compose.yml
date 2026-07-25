@@ -38,13 +38,13 @@ services:
       - PROVIDER_TTL=${PROVIDER_TTL:-80}
       - MAX_STALE=${MAX_STALE:-900}
       - STATE_DIR=/data
-      # Shared cache store (see .env.example). Three modes:
-      #   • hosted (Upstash, etc.): put the rediss://… URL in .env → shared across
-      #     machines, nothing to run locally.
-      #   • local Redis: `docker compose --profile local-redis up -d` and set
-      #     REDIS_URL=redis://redis:6379 in .env.
-      #   • unset: in-memory + rank-cache.json file, single instance.
-      # Only the warmer "leader" scrapes; set WARMER=off on any extra viewer.
+      # Shared cache store (see .env.example). Set REDIS_URL in .env to:
+      #   • another machine's Redis (e.g. the Pi): redis://<pi-ip>:6379 — both
+      #     boxes then share ONE Redis (same data).
+      #   • this machine's own Redis: `docker compose --profile local-redis up -d`
+      #     and REDIS_URL=redis://redis:6379.
+      #   • unset → in-memory + rank-cache.json file, single instance.
+      # Only the warmer "leader" scrapes; on a viewer-only box set WARMER=off.
       - REDIS_URL=${REDIS_URL:-}
       - WARMER=${WARMER:-}
       # Teams Incoming Webhook / Workflow URL for the sheet's "Send to Teams"
