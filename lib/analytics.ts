@@ -9,7 +9,7 @@
 
 import { appendFile, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { page, siteHeader } from "./theme.mjs";
+import { page, siteHeader } from "./theme";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const FILE = join(STATE_DIR, "events.jsonl");

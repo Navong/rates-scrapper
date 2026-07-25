@@ -1,4 +1,4 @@
-import { getCountry } from "@/lib/countries.mjs";
+import { getCountry } from "@/lib/countries";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

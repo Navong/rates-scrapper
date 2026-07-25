@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { getEntry, setEntry, statusOf, deviation } from "@/lib/manual.mjs";
-import { getCountry, PROVIDER_LABEL } from "@/lib/countries.mjs";
-import { getCountryRecords, invalidateCountry } from "@/lib/cache.mjs";
+import { getEntry, setEntry, statusOf, deviation } from "@/lib/manual";
+import { getCountry, PROVIDER_LABEL } from "@/lib/countries";
+import { getCountryRecords, invalidateCountry } from "@/lib/cache";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

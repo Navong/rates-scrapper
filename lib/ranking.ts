@@ -12,10 +12,10 @@
 //
 // Manual providers (Sentbe, FoneMoney, Cross…) come from the saved manual bases.
 
-import { PROVIDER_LABEL, countryList, anchorOf, providerInMethod } from "./countries.mjs";
-import { page, countryTabs, siteHeader } from "./theme.mjs";
-import { statusOf, humanAge } from "./manual.mjs";
-import { feeFor, getFeeOverride } from "./fees.mjs";
+import { PROVIDER_LABEL, countryList, anchorOf, providerInMethod } from "./countries";
+import { page, countryTabs, siteHeader } from "./theme";
+import { statusOf, humanAge } from "./manual";
+import { feeFor, getFeeOverride } from "./fees";
 
 // Competitor cell fills. Anything not listed falls back to blue ("others").
 export const FILL = {

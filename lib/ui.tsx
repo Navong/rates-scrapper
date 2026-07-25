@@ -5,8 +5,8 @@
 // and client markup match and never trip a hydration mismatch.
 
 import Link from "next/link";
-import { CREDIT, COPYRIGHT } from "./meta.mjs";
-import { COUNTRIES } from "./countries.mjs";
+import { CREDIT, COPYRIGHT } from "./meta";
+import { COUNTRIES } from "./countries";
 
 // --- Global stat strip (same operational facts on every page) ---------------
 const _prov = Object.values(COUNTRIES).flatMap((c) => Object.entries(c.providers));
@@ -132,4 +132,4 @@ export function CountryTabs({ countries, activeCode, hrefFor }) {
 
 // Lives in lib/date.mjs (pure, no React) so route handlers can import it
 // without pulling this module in; re-exported here for existing callers.
-export { todayStr } from "./date.mjs";
+export { todayStr } from "./date";

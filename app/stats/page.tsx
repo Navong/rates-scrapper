@@ -1,9 +1,9 @@
 import { cookies } from "next/headers";
-import { countryList } from "@/lib/countries.mjs";
-import { readStats } from "@/lib/analytics.mjs";
-import { roleFromValue } from "@/lib/roles.mjs";
-import { todayStr } from "@/lib/ui.jsx";
-import StatsClient from "./StatsClient.jsx";
+import { countryList } from "@/lib/countries";
+import { readStats } from "@/lib/analytics";
+import { roleFromValue } from "@/lib/roles";
+import { todayStr } from "@/lib/ui";
+import StatsClient from "./StatsClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

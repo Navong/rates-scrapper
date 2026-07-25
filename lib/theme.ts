@@ -1,8 +1,8 @@
 // Shared look & feel for every page (dashboard, sheet view, stats, sign-in).
 // One set of tokens → the pages can't drift apart, and dark mode works everywhere.
 
-import { CREDIT, COPYRIGHT } from "./meta.mjs";
-import { COUNTRIES } from "./countries.mjs";
+import { CREDIT, COPYRIGHT } from "./meta";
+import { COUNTRIES } from "./countries";
 
 // GME operations-dashboard language: a full-bleed red brand bar with the logo
 // and status pills, a stat-counter strip, underline tabs, and a red footer —

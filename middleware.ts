@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { roleFromValue } from "./lib/roles.mjs";
+import { roleFromValue } from "./lib/roles";
 
 // Password gate + anonymous visitor cookie.
 // Self-contained (reads process.env at call time) so it works in the middleware

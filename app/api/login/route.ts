@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyAdmin, adminToken } from "@/lib/admin.mjs";
+import { verifyAdmin, adminToken } from "@/lib/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -11,7 +11,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
-import { COUNTRIES } from "./countries.mjs";
+import { COUNTRIES } from "./countries";
 
 // Manual rates are stored per payout method, because a provider (e.g. Sentbe in
 // Cambodia) can quote a different rate for Bank Deposit vs Cash Payment.

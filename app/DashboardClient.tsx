@@ -4,8 +4,8 @@
 // switching corridor/method or refreshing never reloads the page.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppHeader, SiteFooter } from "@/lib/ui.jsx";
-import { anchorOf } from "@/lib/countries.mjs";
+import { AppHeader, SiteFooter } from "@/lib/ui";
+import { anchorOf } from "@/lib/countries";
 
 const fmt = (n) => "₩" + Math.round(n).toLocaleString("en-US");
 const n0 = (v) => Math.round(v).toLocaleString("en-US");

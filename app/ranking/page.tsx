@@ -1,12 +1,12 @@
 import { cookies, headers } from "next/headers";
-import { getCountry, countryList } from "@/lib/countries.mjs";
-import { getCached } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/lib/ranking.mjs";
-import { getStore } from "@/lib/manual.mjs";
-import { logEvent } from "@/lib/analytics.mjs";
-import { roleFromValue } from "@/lib/roles.mjs";
-import { todayStr } from "@/lib/ui.jsx";
-import SheetClient from "./SheetClient.jsx";
+import { getCountry, countryList } from "@/lib/countries";
+import { getCached } from "@/lib/cache";
+import { buildRankingData } from "@/lib/ranking";
+import { getStore } from "@/lib/manual";
+import { logEvent } from "@/lib/analytics";
+import { roleFromValue } from "@/lib/roles";
+import { todayStr } from "@/lib/ui";
+import SheetClient from "./SheetClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -4,8 +4,8 @@
 // where sendTotalKRW = principalKRW + feeKRW  (total KRW to send for the
 // country's fixed receive amount).
 
-import { gmeFetch, limited } from "./limiter.mjs";
-import { amountFor, providerInMethod } from "./countries.mjs";
+import { gmeFetch, limited } from "./limiter";
+import { amountFor, providerInMethod } from "./countries";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 

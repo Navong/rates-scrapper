@@ -1,4 +1,4 @@
-import { CREDIT } from "@/lib/meta.mjs";
+import { CREDIT } from "@/lib/meta";
 
 export const dynamic = "force-dynamic";
 

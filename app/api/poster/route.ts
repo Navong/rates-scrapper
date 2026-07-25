@@ -1,9 +1,9 @@
-import { getCountry, anchorOf } from "@/lib/countries.mjs";
-import { getCountryRecords } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/lib/ranking.mjs";
-import { getStore } from "@/lib/manual.mjs";
-import { posterPNG } from "@/lib/poster.mjs";
-import { todayStr } from "@/lib/date.mjs";
+import { getCountry, anchorOf } from "@/lib/countries";
+import { getCountryRecords } from "@/lib/cache";
+import { buildRankingData } from "@/lib/ranking";
+import { getStore } from "@/lib/manual";
+import { posterPNG } from "@/lib/poster";
+import { todayStr } from "@/lib/date";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

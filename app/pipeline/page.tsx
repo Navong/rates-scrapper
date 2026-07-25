@@ -1,10 +1,10 @@
 import { cookies, headers } from "next/headers";
-import { getCountry, anchorOf } from "@/lib/countries.mjs";
-import { getCountryRecords } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/lib/ranking.mjs";
-import { getStore } from "@/lib/manual.mjs";
-import { logEvent } from "@/lib/analytics.mjs";
-import { AppHeader, SiteFooter, todayStr } from "@/lib/ui.jsx";
+import { getCountry, anchorOf } from "@/lib/countries";
+import { getCountryRecords } from "@/lib/cache";
+import { buildRankingData } from "@/lib/ranking";
+import { getStore } from "@/lib/manual";
+import { logEvent } from "@/lib/analytics";
+import { AppHeader, SiteFooter, todayStr } from "@/lib/ui";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

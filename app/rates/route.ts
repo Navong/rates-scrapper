@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getRatesPayload } from "@/lib/cache.mjs";
-import { logEvent } from "@/lib/analytics.mjs";
+import { getRatesPayload } from "@/lib/cache";
+import { logEvent } from "@/lib/analytics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

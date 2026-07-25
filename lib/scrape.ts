@@ -82,7 +82,7 @@ function toNumber(s) {
 // --- Fetchers: each returns a normalized record ------------------------------
 
 async function fetchGme(method) {
-  const { gmeFetch } = await import("./limiter.mjs"); // shared throttle + 429 retry
+  const { gmeFetch } = await import("./limiter"); // shared throttle + 429 retry
   const d = await gmeFetch(GME.endpoint, {
     method: "POST",
     headers: {
@@ -418,7 +418,7 @@ async function main() {
   }
 
   // Write Excel workbook in the "Exchange rate (Daily)" monthly format.
-  const { writeExcel } = await import("./xlsx-writer.mjs");
+  const { writeExcel } = await import("./xlsx-writer");
   const xlsxPath = join(here, "rates.xlsx");
   const res = await writeExcel(xlsxPath, records, sbi, new Date(timestamp));
   console.log(res.ok ? `✓ rates.xlsx updated (sheet "${res.sheet}")` : `⚠ Excel not written: ${res.error}`);

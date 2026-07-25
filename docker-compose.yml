@@ -22,7 +22,7 @@ services:
       - ACCESS_PASSWORD=${ACCESS_PASSWORD:-gme}
       # Admin (single account). Defaults below are a TEST cred (user "admin",
       # password "admin-test-2026") — regenerate with:
-      #   node scripts/hash-password.mjs "your-strong-password"
+      #   npx tsx scripts/hash-password.ts "your-strong-password"
       # and put ADMIN_USER / ADMIN_PASSWORD_HASH / ADMIN_TOKEN in .env.
       - ADMIN_USER=${ADMIN_USER:-admin}
       - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH:-362187a34c27f358b24f720ccc501603:20d82f1e9f343b18fd59e45709faf67474747e561b0aa7f106afc3170a862787}

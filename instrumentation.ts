@@ -3,7 +3,7 @@
 // spreading work (the reason this app is `next start`, not serverless).
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { startWarmer } = await import("./lib/cache.mjs");
+    const { startWarmer } = await import("./lib/cache");
     startWarmer();
   }
 }

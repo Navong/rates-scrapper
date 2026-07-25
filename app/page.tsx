@@ -1,12 +1,12 @@
 import { cookies, headers } from "next/headers";
-import { getCountry, countryList } from "@/lib/countries.mjs";
-import { CHIP, buildRankingData } from "@/lib/ranking.mjs";
-import { getCached } from "@/lib/cache.mjs";
-import { getStore } from "@/lib/manual.mjs";
-import { logEvent } from "@/lib/analytics.mjs";
-import { roleFromValue } from "@/lib/roles.mjs";
-import { todayStr } from "@/lib/ui.jsx";
-import DashboardClient from "./DashboardClient.jsx";
+import { getCountry, countryList } from "@/lib/countries";
+import { CHIP, buildRankingData } from "@/lib/ranking";
+import { getCached } from "@/lib/cache";
+import { getStore } from "@/lib/manual";
+import { logEvent } from "@/lib/analytics";
+import { roleFromValue } from "@/lib/roles";
+import { todayStr } from "@/lib/ui";
+import DashboardClient from "./DashboardClient";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

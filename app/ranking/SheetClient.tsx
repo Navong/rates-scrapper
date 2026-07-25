@@ -5,10 +5,10 @@
 // on a corridor switch. Server-seeded (initialData) for an instant first paint.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppHeader, SiteFooter } from "@/lib/ui.jsx";
-import { anchorOf } from "@/lib/countries.mjs";
-import ManualEditor from "./ManualEditor.jsx";
-import FeeEditor from "./FeeEditor.jsx";
+import { AppHeader, SiteFooter } from "@/lib/ui";
+import { anchorOf } from "@/lib/countries";
+import ManualEditor from "./ManualEditor";
+import FeeEditor from "./FeeEditor";
 
 // Spreadsheet cell fills (kept in sync with ranking.mjs FILL/*_FILL). Defined
 // here so this client component doesn't import the server-only ranking module.

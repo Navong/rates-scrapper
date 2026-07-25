@@ -5,7 +5,7 @@
 // explicit en-US locale so SSR and hydration match.
 
 import { useCallback, useState } from "react";
-import { AppHeader, SiteFooter } from "@/lib/ui.jsx";
+import { AppHeader, SiteFooter } from "@/lib/ui";
 
 const n = (v) => Number(v).toLocaleString("en-US");
 
