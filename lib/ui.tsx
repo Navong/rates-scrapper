@@ -60,13 +60,15 @@ export function StatBar({ stats }) {
 const NAV = [
   { key: "dashboard", label: "Dashboard", icon: "🏠", href: () => "/" },
   { key: "sheet", label: "Sheet view", icon: "📊", href: (c) => (c ? `/ranking?country=${c}` : "/ranking") },
+  { key: "history", label: "Rate graph", icon: "📉", href: (c) => (c ? `/history?country=${c}` : "/history") },
   { key: "stats", label: "Usage stats", icon: "📈", href: () => "/stats" },
 ];
 // Admin-only nav item.
 const PIPELINE = { key: "pipeline", label: "Pipeline", icon: "🚀", href: () => "/pipeline" };
 
 export function Nav({ active = "", country = "", admin = false }) {
-  const items = admin ? [...NAV, PIPELINE] : NAV;
+  const visible = admin ? NAV : NAV.filter((item) => item.key !== "stats");
+  const items = admin ? [...visible, PIPELINE] : visible;
   return (
     <nav className="nav">
       {items.map((n) => (
@@ -82,7 +84,7 @@ export function Nav({ active = "", country = "", admin = false }) {
  * @param {{title, sub?, active?, country?, extra?, stats?, live?, reportDate}} o
  * `sub`/`extra` accept React nodes; `stats` overrides the default counters.
  */
-export function AppHeader({ title, sub = null, active = "", country = "", extra = null, stats = null, live = "Live", reportDate, admin = false }) {
+export function AppHeader({ title, sub = null, active = "", country = "", extra = null, stats = null, live = "Live", reportDate, admin = false, showNav = true }) {
   return (
     <>
       <header className="appbar">
@@ -102,7 +104,7 @@ export function AppHeader({ title, sub = null, active = "", country = "", extra 
         </div>
       </header>
       <StatBar stats={stats} />
-      <Nav active={active} country={country} admin={admin} />
+      {showNav ? <Nav active={active} country={country} admin={admin} /> : null}
     </>
   );
 }

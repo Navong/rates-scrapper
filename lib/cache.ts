@@ -18,6 +18,7 @@ import { collectRates, buildBasesPayload } from "./scrape";
 import { collectCountry } from "./providers";
 import { getCountry, countryList } from "./countries";
 import { redisEnabled, pingOK, jget, jset, withLock, isLeader } from "./redis";
+import { recordRateSnapshot } from "./rate-history";
 
 const CACHE_TTL = Number(process.env.CACHE_TTL ?? 240) * 1000; // identical request cached
 const MAX_STALE = Number(process.env.MAX_STALE ?? 900) * 1000; // never serve older than this
@@ -118,6 +119,9 @@ async function doScrape(country, fresh) {
   const code = country.code;
   const { records, errors } = await collectCountry(country, { fresh });
   const now = Date.now();
+  await recordRateSnapshot(country, records, now).catch((e) =>
+    console.error(`history write ${code} failed:`, e.message)
+  );
   for (const r of records) r._at = now;
 
   // Last-known-good: carry a recent value forward when a provider misses this

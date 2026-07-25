@@ -14,7 +14,7 @@ const RT = "rt";
 const VID = "vid";
 
 // HTML pages redirect to the sign-in page; data endpoints answer 401 JSON.
-const HTML_PATHS = ["/", "/ranking", "/stats", "/pipeline"];
+const HTML_PATHS = ["/", "/ranking", "/history", "/stats", "/pipeline"];
 const DATA_PREFIXES = ["/rates", "/manual", "/fees", "/api"];
 // Admin-only (role must be "admin", not just any logged-in viewer).
 const ADMIN_PREFIXES = ["/pipeline", "/api/pipeline"];

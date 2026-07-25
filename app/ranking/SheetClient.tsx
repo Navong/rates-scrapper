@@ -9,6 +9,7 @@ import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
 import ManualEditor from "./ManualEditor";
 import FeeEditor from "./FeeEditor";
+import CountryViewPicker from "../CountryViewPicker";
 
 // Spreadsheet cell fills (kept in sync with ranking.mjs FILL/*_FILL). Defined
 // here so this client component doesn't import the server-only ranking module.
@@ -409,15 +410,16 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
         stats={d ? computeStats(d) : null}
         reportDate={reportDate}
         admin={admin}
+        showNav={false}
       />
 
-      <div className="tabs">
-        {countries.map((c) => (
-          <button key={c.code} className={"tab" + (c.code === country ? " on" : "")} onClick={() => setCountry(c.code)}>
-            {c.flag} {c.name}
-          </button>
-        ))}
-      </div>
+      <CountryViewPicker
+        countries={countries}
+        country={country}
+        activeView="sheet"
+        onCountryChange={setCountry}
+        admin={admin}
+      />
 
       <div id="sheet-region">
         {err ? <div className="warn">Failed to load: {err}</div> : null}

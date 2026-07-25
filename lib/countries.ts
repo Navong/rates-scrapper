@@ -308,5 +308,12 @@ export function getCountry(code) {
   return COUNTRIES[String(code || "KH").toUpperCase()] || COUNTRIES.KH;
 }
 export function countryList() {
-  return Object.values(COUNTRIES).map((c) => ({ code: c.code, name: c.name, flag: c.flag, currency: c.currency, receiveAmount: c.receiveAmount }));
+  return Object.values(COUNTRIES).map((c) => ({
+    code: c.code,
+    name: c.name,
+    flag: c.flag,
+    currency: c.currency,
+    receiveAmount: c.receiveAmount,
+    methods: c.methods,
+  }));
 }

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
+import CountryViewPicker from "./CountryViewPicker";
 
 const fmt = (n) => "₩" + Math.round(n).toLocaleString("en-US");
 const n0 = (v) => Math.round(v).toLocaleString("en-US");
@@ -231,15 +232,16 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
         stats={d ? computeStats(d, curMethod) : null}
         reportDate={reportDate}
         admin={admin}
+        showNav={false}
       />
 
-      <div className="tabs" id="tabs">
-        {countries.map((c) => (
-          <button key={c.code} className={"tab" + (c.code === country ? " on" : "")} onClick={() => setCountry(c.code)}>
-            {c.flag} {c.name}
-          </button>
-        ))}
-      </div>
+      <CountryViewPicker
+        countries={countries}
+        country={country}
+        activeView="dashboard"
+        onCountryChange={setCountry}
+        admin={admin}
+      />
 
       {d && methods.length > 1 ? (
         <div className="mtabs">
@@ -331,6 +333,3 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
     </main>
   );
 }
-
-
-
