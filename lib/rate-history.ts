@@ -8,8 +8,8 @@ import { redisEnabled, rpushCapped, ltail } from "./redis";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-const SNAPSHOT_INTERVAL_MS = 30 * 60 * 1000;   // sample history every 30 minutes
-const REDIS_CAP = 600;                         // ≈ 12 days of 30-minute snapshots
+const SNAPSHOT_INTERVAL_MS = 10 * 60 * 1000;   // sample history every 10 minutes
+const REDIS_CAP = 1200;                        // ≈ 8 days of 10-minute snapshots
 const RKEY = (code) => `rate-history:${code}`;
 const FILE = (code) => join(STATE_DIR, `rate-history-${code}.jsonl`);
 const lastCompact = new Map();
@@ -81,8 +81,8 @@ export async function readRateHistory(country, method, range = "today") {
     .filter((s) => Number(s.t) >= cutoff && Array.isArray(s.rows))
     .sort((a, b) => Number(a.t) - Number(b.t));
 
-  // 30-minute points for BOTH ranges (today and 7-day), matching the snapshot
-  // cadence, so the whole graph reads at a consistent 30-minute gap.
+  // 10-minute points for BOTH ranges (today and 7-day), matching the snapshot
+  // cadence, so the whole graph reads at a consistent 10-minute gap.
   const bucketMs = SNAPSHOT_INTERVAL_MS;
   const buckets = new Map();
   for (const snap of snapshots) {
