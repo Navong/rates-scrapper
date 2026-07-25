@@ -48,19 +48,19 @@ flowchart TD
 > No Redis configured? The store falls back to **JSON files on disk** and the app
 > runs as a single instance — same behavior, minus the sharing.
 
-The core modules:
+The core files:
 
 | File | Job |
 |------|-----|
-| `lib/countries.ts` | **WHAT** — corridors, providers/channels, fee tables, price-gap anchors |
-| `lib/providers.ts` | **HOW** — one config-driven fetcher per upstream API |
-| `lib/limiter.ts` | **HOW OFTEN** — per-provider memo + in-flight dedupe + serial queue |
-| `lib/cache.ts` | **WHEN** — stale-while-revalidate cache + background warmer + persistence |
-| `lib/redis.ts` | **WHERE** — shared store: leader lock, per-corridor lock, pub/sub (optional) |
+| `lib/countries.ts` | **WHAT** — which providers to check per corridor, and their fees |
+| `lib/providers.ts` | **HOW** — one small fetcher per company |
+| `lib/limiter.ts` | **HOW OFTEN** — spaces out calls so no company is hammered |
+| `lib/cache.ts` | **WHEN** — serves rates instantly, refreshes in the background |
+| `lib/redis.ts` | **WHERE** — the shared store that keeps every copy in sync (optional) |
 
 ---
 
-## Scrape flow — `collectCountry(country)`
+## How rates get fetched
 
 ```mermaid
 flowchart LR
@@ -76,17 +76,17 @@ flowchart LR
     FEE --> OUT["results + any failures"]
 ```
 
-- Every fetcher returns the **same shape** — `sendTotalKRW = principalKRW + feeKRW`.
-- Jobs run **concurrently** (`Promise.allSettled`, each under a per-job timeout); one
-  provider failing never drops the others.
-- Provider API codes are corridor-specific and **found by probing** (e.g. E9pay VN =
-  `VN03`, Gmoney needs `"Viet Nam"` with a space), then recorded in `lib/countries.ts`.
+- The number that matters is the same everywhere: **KRW to send = amount + fee**.
+- All companies are checked **at the same time**, so one slow or broken company never
+  holds up the rest.
+- Each company uses its own codes per corridor (found by testing their live site) — kept
+  in the settings file so nothing is guessed at runtime.
 
 ---
 
-## The governor — `lib/limiter.ts`
+## Not hammering the providers
 
-Every call passes three layers so upstreams are never hammered:
+Every call passes three checks so no company gets too many requests:
 
 ```mermaid
 flowchart LR
@@ -99,17 +99,16 @@ flowchart LR
     NET --> STORE[remember the answer] --> RET
 ```
 
-Queues are **per-provider**, so a slow one never blocks the others. **GME is the
-strictest** (HTTP 200 + `errorCode 429` after ~4 rapid calls) → largest gap + backoff
-retries under the 25 s job timeout. The memo key includes the channel key, so two
-channels of one API don't collide.
+Each company has its **own queue** with a small gap between calls, so a slow one never
+blocks the others. **GME is the strictest** — it blocks you after a few rapid calls, so it
+gets the biggest gap plus automatic retries.
 
 ---
 
-## Cache handling — `lib/cache.ts` + `lib/redis.ts`
+## Keeping rates fresh (and shared)
 
-Policy is **stale-while-revalidate**: serve instantly, refresh in the background. Fast
-memory is the hot path; the shared store (Redis) makes it durable and shared.
+Rates are served **instantly from memory** and refreshed **in the background**, so pages
+never wait on a live fetch. The shared store (Redis) makes that data durable and shared.
 
 ```mermaid
 flowchart TD
@@ -126,22 +125,22 @@ flowchart TD
     STORE -->|reload on restart / peer update| MEM
 ```
 
-- **Warmer** (`instrumentation.ts`) refreshes one corridor at a time → upstream load is
-  `corridors × time`, never `users × time`. This is what keeps GME under its burst limit.
-- **Shared + durable** → the cache, manual rates, fees and usage all live in Redis, so a
-  restart comes up **warm** and every instance sees the same data.
-- **Last-known-good carry-forward** → a provider that misses one scrape keeps its value
-  from within `MAX_STALE` (default 900 s) and clears its warning — matched on both
-  `PROVIDER` and `PROVIDER/METHOD` shapes, so a transient SBI miss never blanks the row or
-  the GME price-gap anchor.
-- **Manual rates / fees** (`lib/manual.ts`, `lib/fees.ts`) — kept behind their fast
-  synchronous getters via an in-memory copy that hydrates from Redis and stays fresh across
-  instances via **pub/sub**. Manual rates carry a 1-hour TTL, audit log and typo guard.
+- **Auto-refresher** — refreshes one corridor at a time on a timer, so the companies see
+  steady, light traffic instead of a spike every time someone visits. This is what keeps
+  GME from blocking us.
+- **Shared + durable** — the cache, manual rates, fees and usage all live in the shared
+  store, so a restart comes back with data already loaded and every copy sees the same thing.
+- **Never blanks on a blip** — if a company misses one refresh, we keep its last recent
+  value instead of showing a gap.
+- **Typed-in rates & fees** — providers with no live rate are typed on the sheet; those and
+  any fee tweaks are saved in the shared store. Manual rates expire after **1 hour**, so an
+  old number can't quietly pass as current.
 
 ### Running several instances
 
-Exactly **one** instance scrapes (it wins a Redis **leader lock**); the rest serve the
-shared copy and never double-hit a provider. No Redis → single instance + JSON files.
+You can run several copies of the app. They all share one store, and only **one** of them
+(the "leader") actually fetches from the companies — the rest just serve the shared copy,
+so the companies are never called twice. No Redis → run a single copy.
 
 ```mermaid
 flowchart LR
@@ -161,9 +160,9 @@ flowchart LR
     classDef disk fill:#f1f3f5,stroke:#6b7280,color:#1a1d24;
 ```
 
-> ⚠️ Only one process can bind `:8787` on a given host. Multiple instances = multiple
-> hosts/ports; the leader lock (not the port) is what keeps GME safe. With **no Redis**,
-> run exactly one instance — every process would warm and fight over GME's limit.
+> ⚠️ **Without Redis, run exactly one copy.** Two copies with no shared store would both
+> fetch from the companies and get you blocked. With Redis, only the leader fetches, so
+> extra copies are safe.
 
 ---
 
@@ -201,7 +200,7 @@ sequenceDiagram
 | `/api/sheet?country=XX` | ranking sheet rendered server-side as **PNG** |
 | `/api/poster?method=XX` | single-rate marketing poster **PNG** |
 | `/api/send-teams?country=XX` | POST — caption + sheet image to a Teams webhook |
-| `/rates` | byte-compatible Excel / Power Automate payload (keep stable) |
+| `/rates` | the exact JSON shape Excel / Power Automate expects (keep it stable) |
 | `/manual` · `/fees` | POST — save manual rates / fee overrides |
 | `/health` · `/login` · `/admin` | status · web login · admin sign-in |
 
