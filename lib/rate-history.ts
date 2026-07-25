@@ -74,9 +74,10 @@ async function compactFile(code, cutoff) {
 
 export async function readRateHistory(country, method, range = "today") {
   const now = Date.now();
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
-  const cutoff = range === "today" ? startOfToday.getTime() : now - WINDOW_MS;
+  // "Today" is intentionally a rolling 24-hour window. A calendar-midnight
+  // cutoff makes the graph appear to lose all history at 00:00 and leaves only
+  // one point, which an area chart cannot visibly draw.
+  const cutoff = range === "today" ? now - 24 * 60 * 60 * 1000 : now - WINDOW_MS;
   const snapshots = (await readSnapshots(country.code))
     .filter((s) => Number(s.t) >= cutoff && Array.isArray(s.rows))
     .sort((a, b) => Number(a.t) - Number(b.t));
