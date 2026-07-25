@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A multi-provider **Korea-outbound remittance rate comparison** app. It scrapes ~14 money-transfer providers across corridors (Cambodia, Nepal, Indonesia, Sri Lanka, Philippines, China, Thailand, Myanmar) and presents them as a web dashboard, a spreadsheet-style "sheet view", a JSON feed for Excel/Power Automate, and usage analytics. It was migrated from a plain Node `http` server to **Next.js 15 (App Router) + Tailwind v4**. The business-logic modules (`lib/countries.ts`, `lib/providers.ts`, …) live under `lib/` alongside the Next app.
+A multi-provider **Korea-outbound remittance rate comparison** app. It scrapes ~14 money-transfer providers across corridors (Cambodia, Vietnam, Nepal, Indonesia, Sri Lanka, Bangladesh, Philippines, China, Thailand, Myanmar) and presents them as a web dashboard, a spreadsheet-style "sheet view", a JSON feed for Excel/Power Automate, and usage analytics. It was migrated from a plain Node `http` server to **Next.js 15 (App Router) + Tailwind v4**. The business-logic modules (`lib/countries.ts`, `lib/providers.ts`, …) live under `lib/` alongside the Next app.
 
 ## Commands
 

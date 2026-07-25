@@ -1,7 +1,7 @@
 # Remittance Rate Comparison
 
-Korea-outbound money-transfer **rate comparison**. Scrapes ~14 providers across 9
-corridors (KH · VN · NP · ID · LK · PH · CN · TH · MM) and serves them as a dashboard,
+Korea-outbound money-transfer **rate comparison**. Scrapes ~14 providers across 10
+corridors (KH · VN · NP · ID · LK · BD · PH · CN · TH · MM) and serves them as a dashboard,
 a spreadsheet "sheet view", a JSON feed for Excel / Power Automate, and usage stats.
 
 **Next.js 15 (App Router) · TypeScript · Tailwind v4 · Redis-backed shared state**
