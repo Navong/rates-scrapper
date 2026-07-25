@@ -81,9 +81,9 @@ export async function readRateHistory(country, method, range = "today") {
     .filter((s) => Number(s.t) >= cutoff && Array.isArray(s.rows))
     .sort((a, b) => Number(a.t) - Number(b.t));
 
-  // Today shows the 5-minute snapshots directly; the seven-day view rolls up to
-  // one point per hour so the chart stays readable.
-  const bucketMs = range === "today" ? SNAPSHOT_INTERVAL_MS : 60 * 60 * 1000;
+  // 5-minute points for BOTH ranges (today and 7-day), matching the snapshot
+  // cadence, so the whole graph reads at a consistent 5-minute gap.
+  const bucketMs = SNAPSHOT_INTERVAL_MS;
   const buckets = new Map();
   for (const snap of snapshots) {
     const t = Math.floor(Number(snap.t) / bucketMs) * bucketMs;

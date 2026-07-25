@@ -36,7 +36,7 @@ function RateTooltip({ active, payload, label }: any) {
         </div>
       ))}
       {remaining > 0 ? <div className="tooltip-more">+{remaining} more providers</div> : null}
-      {interpolated ? <div className="tooltip-estimate">Between hourly snapshots</div> : null}
+      {interpolated ? <div className="tooltip-estimate">Between 5-min snapshots</div> : null}
     </div>
   );
 }
@@ -58,16 +58,16 @@ function RateChart({ providers, visible, range, from, to }) {
         byTime.set(point.t, row);
       }
     }
-    const hourly = [...byTime.values()].sort((a, b) => a.t - b.t);
-    if (hourly.length < 2) return hourly;
+    // Points are already 5-minute spaced from the backend — plot them directly.
+    const rows = [...byTime.values()].sort((a, b) => a.t - b.t);
 
-    // Recharts activates an axis tooltip at data rows. Add small, interpolated
-    // hover positions between the real hourly rows so the tooltip works along
-    // the full visible line rather than only at hour endpoints.
-    const step = 10 * 60 * 1000;
+    // Recharts activates an axis tooltip at data rows. Add 1-minute interpolated
+    // hover positions between the real 5-minute rows so the tooltip works along
+    // the whole line rather than only at each point.
+    const step = 60 * 1000;
     const dense = [];
-    for (let i = 0; i < hourly.length - 1; i++) {
-      const a = hourly[i], b = hourly[i + 1];
+    for (let i = 0; i < rows.length - 1; i++) {
+      const a = rows[i], b = rows[i + 1];
       dense.push(a);
       for (let t = a.t + step; t < b.t; t += step) {
         const ratio = (t - a.t) / (b.t - a.t);
@@ -79,9 +79,13 @@ function RateChart({ providers, visible, range, from, to }) {
         dense.push(row);
       }
     }
-    dense.push(hourly[hourly.length - 1]);
+    if (rows.length) dense.push(rows[rows.length - 1]);
     return dense;
   }, [shown]);
+
+  // Real (non-interpolated) point count — used to hide dots when the line is dense.
+  const realCount = chartData.filter((r) => !r._interpolated).length;
+  const showDots = realCount <= 160;
 
   if (!points.length) return <div className="history-empty">No automatic rate history has been collected for this selection yet.</div>;
 
@@ -140,7 +144,7 @@ function RateChart({ providers, visible, range, from, to }) {
                 type="natural"
                 stroke={color}
                 strokeWidth={2}
-                dot={<HourlyDot />}
+                dot={showDots ? <HourlyDot /> : false}
                 activeDot={{ r: 5, fill: "var(--card)", strokeWidth: 2 }}
                 connectNulls
                 isAnimationActive
@@ -255,7 +259,7 @@ export default function HistoryClient({ countries, initialCountry, initialMethod
 
       <section className={`panel history-panel${loading ? " loading" : ""}`}>
         <div className="history-panel-head">
-          <div><h2>Total KRW trend</h2><p>Automatic providers only · hourly points</p></div>
+          <div><h2>Total KRW trend</h2><p>Automatic providers only · 5-minute points</p></div>
           <div className="history-actions">
             <div className="history-range" aria-label="Graph time range">
               <button className={range === "today" ? "on" : ""} onClick={() => changeRange("today")}>Today</button>
