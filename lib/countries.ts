@@ -124,6 +124,28 @@ export const COUNTRIES = {
     },
   },
 
+  BD: {
+    code: "BD",
+    name: "Bangladesh",
+    flag: "🇧🇩",
+    currency: "BDT",
+    receiveAmount: 100000,
+    anchor: "GME",
+    methods: [{ key: "BANK", label: "Bank Deposit" }],
+    // All scraped (verified live against each API for BDT 100,000). E9pay resolves
+    // Bangladesh by currency (any BD nation code returns the same bank rate);
+    // Cross uses platform 76 (rate_currency "1 BDT" → rateUnit 1).
+    providers: {
+      GME:       { countryName: "Bangladesh", deliveryMethod: { BANK: "2" }, fee: { BANK: 5000 } },
+      E9PAY:     { nation: { BANK: "BD01" }, fee: { BANK: 5000 } },
+      HANPASS:   { countryCode: "BD", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
+      GMONEY:    { country: "Bangladesh", payment: { BANK: "Bank Account" }, fee: { BANK: 5000 } },
+      JRF:       { type: { BANK: "Bank Transfer" }, fee: { BANK: 0 } },
+      UTRANSFER: { fee: { BANK: 5000 } },
+      CROSS:     { platform: 76, rateUnit: 1, fee: { BANK: 0 } }, // crossenf.com quote API
+    },
+  },
+
   PH: {
     code: "PH",
     name: "Philippines",
