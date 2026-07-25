@@ -136,34 +136,6 @@ flowchart TD
   any fee tweaks are saved in the shared store. Manual rates expire after **1 hour**, so an
   old number can't quietly pass as current.
 
-### Running several instances
-
-You can run several copies of the app. They all share one store, and only **one** of them
-(the "leader") actually fetches from the companies — the rest just serve the shared copy,
-so the companies are never called twice. No Redis → run a single copy.
-
-```mermaid
-flowchart LR
-    subgraph inst["App instances"]
-        A["instance A<br/>LEADER — runs the warmer"]:::hot
-        B["instance B<br/>follower — serves shared cache"]:::s
-        C["instance C<br/>follower — serves shared cache"]:::s
-    end
-    A -->|writes fresh rates| R[("Shared store (Redis)")]:::disk
-    B -->|reads| R
-    C -->|reads| R
-    A -. holds the warmer-leader lock .- R
-    R -. per-corridor scrape lock .- A
-
-    classDef s fill:#f6f7f9,stroke:#8a8f98,color:#1a1d24;
-    classDef hot fill:#fdecef,stroke:#e4002b,color:#1a1d24;
-    classDef disk fill:#f1f3f5,stroke:#6b7280,color:#1a1d24;
-```
-
-> ⚠️ **Without Redis, run exactly one copy.** Two copies with no shared store would both
-> fetch from the companies and get you blocked. With Redis, only the leader fetches, so
-> extra copies are safe.
-
 ---
 
 ## Request lifecycle
@@ -221,6 +193,9 @@ cycle) · `GME_TTL` · `MAX_STALE` · `STATE_DIR` · `TZ=Asia/Seoul` · `TEAMS_W
 
 Runs via Docker Compose (backend + a `redis` service) behind a Cloudflare tunnel on
 `127.0.0.1:8787`, from a **residential IP** (some providers, e.g. SBI, block datacenter IPs).
+
+> Run **one copy** unless Redis is set up — two copies without the shared store would both
+> fetch from the companies and get you blocked.
 
 ```bash
 docker compose up -d --build     # local / dev host — builds from source (+ redis)
