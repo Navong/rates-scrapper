@@ -8,9 +8,9 @@
     "dev": "next dev -p 8787",
     "build": "next build",
     "start": "next start -p 8787",
-    "scrape": "node scrape.mjs",
-    "json": "node scrape.mjs --json",
-    "payload": "node scrape.mjs --payload"
+    "scrape": "node lib/scrape.mjs",
+    "json": "node lib/scrape.mjs --json",
+    "payload": "node lib/scrape.mjs --payload"
   },
   "engines": {
     "node": ">=20"

@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
-import { getCountry } from "@/countries.mjs";
+import { getCountry } from "@/lib/countries.mjs";
 import { getCountryRecords } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/ranking.mjs";
-import { getStore } from "@/manual.mjs";
-import { logEvent } from "@/analytics.mjs";
+import { buildRankingData } from "@/lib/ranking.mjs";
+import { getStore } from "@/lib/manual.mjs";
+import { logEvent } from "@/lib/analytics.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

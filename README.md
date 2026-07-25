@@ -49,9 +49,9 @@ Four files, four jobs:
 
 | File | Job |
 |------|-----|
-| `countries.mjs` | **WHAT** — corridors, providers/channels, fee tables, price-gap anchors |
-| `providers.mjs` | **HOW** — one config-driven fetcher per upstream API |
-| `limiter.mjs` | **HOW OFTEN** — per-provider memo + in-flight dedupe + serial queue |
+| `lib/countries.mjs` | **WHAT** — corridors, providers/channels, fee tables, price-gap anchors |
+| `lib/providers.mjs` | **HOW** — one config-driven fetcher per upstream API |
+| `lib/limiter.mjs` | **HOW OFTEN** — per-provider memo + in-flight dedupe + serial queue |
 | `lib/cache.mjs` | **WHEN** — stale-while-revalidate cache + background warmer + persistence |
 
 ---
@@ -76,11 +76,11 @@ flowchart LR
 - Jobs run **concurrently** (`Promise.allSettled`, each under a per-job timeout); one
   provider failing never drops the others.
 - Provider API codes are corridor-specific and **found by probing** (e.g. E9pay VN =
-  `VN03`, Gmoney needs `"Viet Nam"` with a space), then recorded in `countries.mjs`.
+  `VN03`, Gmoney needs `"Viet Nam"` with a space), then recorded in `lib/countries.mjs`.
 
 ---
 
-## The governor — `limiter.mjs`
+## The governor — `lib/limiter.mjs`
 
 Every call passes three layers so upstreams are never hammered:
 
@@ -127,7 +127,7 @@ flowchart TD
   from within `MAX_STALE` (default 900 s) and clears its warning — matched on both
   `PROVIDER` and `PROVIDER/METHOD` shapes, so a transient SBI miss never blanks the row or
   the GME price-gap anchor.
-- **Manual rates** (`manual.mjs`) — providers with no scrapeable API are typed on the
+- **Manual rates** (`lib/manual.mjs`) — providers with no scrapeable API are typed on the
   sheet: `code → provider → method`, 1-hour TTL, audit log, typo guard.
 
 > ⚠️ **One instance only.** The in-memory cache + warmer mean this app **cannot be

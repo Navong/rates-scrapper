@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppHeader, SiteFooter } from "@/lib/ui.jsx";
-import { anchorOf } from "@/countries.mjs";
+import { anchorOf } from "@/lib/countries.mjs";
 import ManualEditor from "./ManualEditor.jsx";
 import FeeEditor from "./FeeEditor.jsx";
 

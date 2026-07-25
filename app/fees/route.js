@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { setFee, clearFee } from "@/fees.mjs";
-import { getCountry, PROVIDER_LABEL } from "@/countries.mjs";
+import { setFee, clearFee } from "@/lib/fees.mjs";
+import { getCountry, PROVIDER_LABEL } from "@/lib/countries.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

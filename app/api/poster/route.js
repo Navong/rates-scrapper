@@ -1,7 +1,7 @@
-import { getCountry, anchorOf } from "@/countries.mjs";
+import { getCountry, anchorOf } from "@/lib/countries.mjs";
 import { getCountryRecords } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/ranking.mjs";
-import { getStore } from "@/manual.mjs";
+import { buildRankingData } from "@/lib/ranking.mjs";
+import { getStore } from "@/lib/manual.mjs";
 import { posterPNG } from "@/lib/poster.mjs";
 import { todayStr } from "@/lib/date.mjs";
 

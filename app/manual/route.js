@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { getEntry, setEntry, statusOf, deviation } from "@/manual.mjs";
-import { getCountry, PROVIDER_LABEL } from "@/countries.mjs";
+import { getEntry, setEntry, statusOf, deviation } from "@/lib/manual.mjs";
+import { getCountry, PROVIDER_LABEL } from "@/lib/countries.mjs";
 import { getCountryRecords, invalidateCountry } from "@/lib/cache.mjs";
 
 export const runtime = "nodejs";

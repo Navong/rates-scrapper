@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readStats } from "@/analytics.mjs";
+import { readStats } from "@/lib/analytics.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

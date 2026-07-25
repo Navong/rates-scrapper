@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { healthCorridors, inflightSize } from "@/lib/cache.mjs";
-import { limiterStats } from "@/limiter.mjs";
+import { limiterStats } from "@/lib/limiter.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { countryList } from "@/countries.mjs";
-import { readStats } from "@/analytics.mjs";
+import { countryList } from "@/lib/countries.mjs";
+import { readStats } from "@/lib/analytics.mjs";
 import { roleFromValue } from "@/lib/roles.mjs";
 import { todayStr } from "@/lib/ui.jsx";
 import StatsClient from "./StatsClient.jsx";

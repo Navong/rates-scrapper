@@ -1,9 +1,9 @@
 import { cookies, headers } from "next/headers";
-import { getCountry, anchorOf } from "@/countries.mjs";
+import { getCountry, anchorOf } from "@/lib/countries.mjs";
 import { getCountryRecords } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/ranking.mjs";
-import { getStore } from "@/manual.mjs";
-import { logEvent } from "@/analytics.mjs";
+import { buildRankingData } from "@/lib/ranking.mjs";
+import { getStore } from "@/lib/manual.mjs";
+import { logEvent } from "@/lib/analytics.mjs";
 import { AppHeader, SiteFooter, todayStr } from "@/lib/ui.jsx";
 
 export const runtime = "nodejs";

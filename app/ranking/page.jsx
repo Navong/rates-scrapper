@@ -1,9 +1,9 @@
 import { cookies, headers } from "next/headers";
-import { getCountry, countryList } from "@/countries.mjs";
+import { getCountry, countryList } from "@/lib/countries.mjs";
 import { getCached } from "@/lib/cache.mjs";
-import { buildRankingData } from "@/ranking.mjs";
-import { getStore } from "@/manual.mjs";
-import { logEvent } from "@/analytics.mjs";
+import { buildRankingData } from "@/lib/ranking.mjs";
+import { getStore } from "@/lib/manual.mjs";
+import { logEvent } from "@/lib/analytics.mjs";
 import { roleFromValue } from "@/lib/roles.mjs";
 import { todayStr } from "@/lib/ui.jsx";
 import SheetClient from "./SheetClient.jsx";

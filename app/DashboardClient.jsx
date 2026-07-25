@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppHeader, SiteFooter } from "@/lib/ui.jsx";
-import { anchorOf } from "@/countries.mjs";
+import { anchorOf } from "@/lib/countries.mjs";
 
 const fmt = (n) => "₩" + Math.round(n).toLocaleString("en-US");
 const n0 = (v) => Math.round(v).toLocaleString("en-US");

@@ -5,8 +5,8 @@
 // and client markup match and never trip a hydration mismatch.
 
 import Link from "next/link";
-import { CREDIT, COPYRIGHT } from "../meta.mjs";
-import { COUNTRIES } from "../countries.mjs";
+import { CREDIT, COPYRIGHT } from "./meta.mjs";
+import { COUNTRIES } from "./countries.mjs";
 
 // --- Global stat strip (same operational facts on every page) ---------------
 const _prov = Object.values(COUNTRIES).flatMap((c) => Object.entries(c.providers));
