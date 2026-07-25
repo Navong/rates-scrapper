@@ -1,5 +1,10 @@
 # Power Automate + Node backend — wiring the scraper to your Office Script
 
+> **Note:** This guide predates the Docker-only deployment — ignore the old
+> `serve.bat` and Railway references below; deploy the backend per the README /
+> [NEXT-STEPS.md](NEXT-STEPS.md). The `/rates` payload and Office Scripts
+> (`../integrations/office-scripts/`) are unchanged.
+
 The Node scraper is the **backend** (it does the hard fetching, incl. SBI's
 anti-bot flow). Your **Office Script** stays the formatter/ranker. Power Automate
 glues them: it pulls live base rates from the backend, writes two new rows, then

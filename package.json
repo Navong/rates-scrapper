@@ -8,7 +8,6 @@
     "dev": "next dev -p 8787",
     "build": "next build",
     "start": "next start -p 8787",
-    "start:legacy": "node server.mjs",
     "scrape": "node scrape.mjs",
     "json": "node scrape.mjs --json",
     "payload": "node scrape.mjs --payload"

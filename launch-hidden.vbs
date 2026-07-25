@@ -1,7 +1,8 @@
-' Autostart is now handled by Docker (docker-compose `restart: unless-stopped`
-' + Docker Desktop starting at logon), so this launcher no longer starts a host
-' server. Deploy with:  docker compose up -d --build
+' Optional hidden launcher for autostart at logon. Runs start-host-docker.bat
+' (waits for the Docker engine, then `docker compose up -d --build`) with no
+' visible console window. Point a Startup-folder shortcut at this file to use it.
 '
-' To go back to running on the host instead of Docker, uncomment one line below:
-' CreateObject("Wscript.Shell").Run "cmd /c ""D:\2026\rate-scrapper\start-host-next.bat""", 0, False   ' Next.js on host
-' CreateObject("Wscript.Shell").Run "cmd /c ""D:\2026\rate-scrapper\start-host.bat""", 0, False        ' legacy plain-node
+' Not required if Docker Desktop autostarts the container itself
+' (docker-compose `restart: unless-stopped` + "start at logon").
+'
+' CreateObject("Wscript.Shell").Run "cmd /c ""D:\2026\rate-scrapper\start-host-docker.bat""", 0, False

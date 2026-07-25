@@ -424,7 +424,7 @@ async function main() {
   console.log(res.ok ? `✓ rates.xlsx updated (sheet "${res.sheet}")` : `⚠ Excel not written: ${res.error}`);
 }
 
-// Only run when invoked directly (not when imported by server.mjs).
+// Only run the CLI when invoked directly (not when imported, e.g. by lib/cache.mjs).
 // Portable across Node versions (doesn't rely on import.meta.main).
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";

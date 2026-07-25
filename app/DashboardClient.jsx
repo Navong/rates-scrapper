@@ -1,8 +1,7 @@
 ﻿"use client";
 
-// Client-rendered dashboard — the React port of dashboard.mjs. Polls
-// /api/ranking (cookie auth, same-origin) so switching corridor/method or
-// refreshing never reloads the page.
+// Client-rendered dashboard. Polls /api/ranking (cookie auth, same-origin) so
+// switching corridor/method or refreshing never reloads the page.
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppHeader, SiteFooter } from "@/lib/ui.jsx";

@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // The old plain-node HTML renderers (theme/dashboard/ranking.mjs) and the
-  // standalone Office Scripts (office-script-*.ts) live on beside the app. They
-  // are not part of the build graph, but skip type/lint gating so a stray legacy
-  // file can never fail `next build`.
+  // The legacy HTML renderers (theme.mjs + the render halves of ranking.mjs) and
+  // the standalone Office Scripts (integrations/office-scripts/*.ts) live beside
+  // the app but aren't part of the build graph. Skip type/lint gating so a stray
+  // legacy file can never fail `next build`.
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 

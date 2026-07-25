@@ -147,8 +147,8 @@ function defaultStats() {
   };
 }
 
-/** Inner markup of the stat bar — shared shape so the dashboard can rebuild it
- *  client-side (see dashboard.mjs statBarInner) and it always matches. */
+/** Inner markup of the stat bar — shared shape so the client dashboard can
+ *  rebuild it and it always matches. */
 export function statBarInner(stats) {
   const s = stats || defaultStats();
   const cards = s.cards.map((c) =>

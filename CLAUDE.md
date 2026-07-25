@@ -12,7 +12,6 @@ A multi-provider **Korea-outbound remittance rate comparison** app. It scrapes ~
 npm run dev            # next dev -p 8787 — compiles routes on first hit (slow first click; dev only)
 npm run build          # next build — STOP any running server first (see gotcha below)
 npm start              # next start -p 8787 — production; a PERSISTENT process is required
-npm run start:legacy   # node server.mjs — the old plain-node server (fallback only)
 npm run scrape         # node scrape.mjs — Cambodia scrape → rates.xlsx (CLI, not the server)
 npm run json           # scrape.mjs --json  (raw JSON to stdout)
 npm run payload        # scrape.mjs --payload  (the /rates Power-Automate payload shape)
@@ -20,7 +19,7 @@ npm run payload        # scrape.mjs --payload  (the /rates Power-Automate payloa
 
 There is **no test suite / linter config**. Verify changes by running the server and hitting the endpoints (see below). Probe scripts (ad-hoc `.mjs` that import `providers.mjs`) are the usual way to check a provider's live API.
 
-**Production launch (Windows host):** `start-host-next.bat` frees port 8787, builds once, then loops `npm start` with the right env. Autostart is `launch-hidden.vbs` (a Startup-folder shortcut runs it hidden). The app sits behind a shared **cloudflared** tunnel on `127.0.0.1:8787` — run it from the **residential IP** (some providers, esp. SBI, block datacenter/cloud IPs).
+**Deployment is Docker-only.** `docker compose up -d --build` on the dev host, or `./pi-update.sh [vX.Y.Z]` on the Raspberry Pi (pulls the prebuilt image — see [docs/](docs/) and the README). `start-host-docker.bat` waits for the Docker engine then brings the stack up; a Startup shortcut (optionally via `launch-hidden.vbs`) can run it hidden at logon. The app sits behind a shared **cloudflared** tunnel on `127.0.0.1:8787` — run it from the **residential IP** (some providers, esp. SBI, block datacenter/cloud IPs).
 
 **Key env vars:** `RATES_TOKEN` (machine API token, also `x-api-token` header), `ACCESS_PASSWORD` (web login, default `gme`), `CACHE_TTL` (seconds; also sets the warmer's full-cycle time), `GME_TTL`, `STATE_DIR` (persistent data dir, default `.`; production uses `data/`), `TZ=Asia/Seoul`, `MAX_STALE` (SWR ceiling, default 900s), `WARMER=off` to disable the warmer, `MANUAL_TTL_HOURS` (default 1), `PROVIDER_TTL` (per-provider memo).
 
@@ -52,4 +51,4 @@ There is **no test suite / linter config**. Verify changes by running the server
 - **Never `npm run build` while a server is serving** — the running process reads `.next` and the overwrite corrupts it (chunk `MODULE_NOT_FOUND`). Stop the server, build, then start.
 - **One instance only.** Multiple `next start` / the legacy server / a Docker container all fight for 8787 and each runs its own warmer. Check `netstat -ano | findstr :8787` when the port seems "stale"; a Docker container from an old image can shadow the host build.
 - **Client components must not import `ranking.mjs`, `manual.mjs`, `scrape.mjs`, or `lib/cache.mjs`** (they use `node:fs`). Import pure data/helpers from `countries.mjs` instead; inline small constants (e.g. FILL colors) if needed.
-- **Legacy files kept, not deleted** (not a git repo → deletions are permanent): `server.mjs`, `theme.mjs`, `dashboard.mjs`, and the HTML-renderer halves of `ranking.mjs`/`analytics.mjs`. `ranking.mjs` and `analytics.mjs` are still imported by the Next app for their data functions — don't remove those exports.
+- **`theme.mjs` + `meta.mjs` are load-bearing, despite looking legacy.** The live app imports `ranking.mjs`/`analytics.mjs` for their data functions, and those still `import` from `theme.mjs` (→ `meta.mjs`) at the top level — so the HTML-renderer halves come along for the ride. Don't delete `theme.mjs`/`meta.mjs` or the render exports without first stripping those imports. (The truly-legacy `server.mjs`/`dashboard.mjs` and the host-launch `.bat`s were removed in the Docker-only cleanup — recover from git history if ever needed.)
