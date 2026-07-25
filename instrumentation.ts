@@ -3,7 +3,8 @@
 // spreading work (the reason this app is `next start`, not serverless).
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { startWarmer } = await import("./lib/cache");
+    const { initCacheFromRedis, startWarmer } = await import("./lib/cache");
+    await initCacheFromRedis(); // warm from the shared Redis copy before serving
     startWarmer();
   }
 }

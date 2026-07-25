@@ -42,8 +42,14 @@ services:
       - GME_TTL=${GME_TTL:-100}
       - PROVIDER_TTL=${PROVIDER_TTL:-80}
       - MAX_STALE=${MAX_STALE:-900}
+      # Shared cache store (durable + cross-instance). Unset to fall back to
+      # in-memory + rank-cache.json (single instance).
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
       # Teams webhook for the sheet's "Send to Teams" button (blank = hidden).
       - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL:-}
+    depends_on:
+      redis:
+        condition: service_healthy
     # Loopback only — the Pi's cloudflared reaches it on 127.0.0.1:8787.
     # (To hit it from other LAN machines instead, change to "8787:8787".)
     ports:
@@ -57,6 +63,19 @@ services:
       interval: 60s
       timeout: 5s
       retries: 3
+
+  # Shared cache / state store (arm64 image pulled automatically). AOF persists.
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - ./redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 5
 
   # --- Optional: run the Cloudflare tunnel here too (named tunnel) ---
   # Uncomment and put CF_TUNNEL_TOKEN in .env if you want the Pi to own the

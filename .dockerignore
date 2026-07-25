@@ -9,3 +9,4 @@ tunnel-url.txt
 .mcp.json
 *.md
 *.bat
+redis-data

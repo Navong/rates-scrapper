@@ -22,3 +22,4 @@ tunnel-url.txt
 # Other tools / editors
 .codex/
 .DS_Store
+redis-data/
