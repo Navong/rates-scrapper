@@ -6,7 +6,6 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
-  Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
@@ -59,9 +58,22 @@ function RateTooltip({ active, payload, label, mode }: any) {
   );
 }
 
-function HourlyDot({ cx, cy, payload, stroke }: any) {
+function HourlyDot({ cx, cy, payload, stroke, sparse, onPointEnter, onPointLeave }: any) {
   if (payload?._interpolated || cx == null || cy == null) return null;
-  return <circle cx={cx} cy={cy} r={3.5} fill="var(--card)" stroke={stroke} strokeWidth={2} />;
+  if (sparse && new Date(payload.t).getMinutes() !== 0) return null;
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={4}
+      fill="var(--card)"
+      stroke={stroke}
+      strokeWidth={2}
+      className="history-point"
+      onMouseEnter={() => onPointEnter?.(payload, cx, cy)}
+      onMouseLeave={() => onPointLeave?.()}
+    />
+  );
 }
 
 export function HistoryChartSkeleton() {
@@ -80,6 +92,7 @@ export function HistoryChartSkeleton() {
 }
 
 function RateChart({ providers, visible, range, from, to, mode }) {
+  const [hoveredPoint, setHoveredPoint] = useState(null);
   const shown = providers.filter((p) => visible.has(p.key) && p.points.length);
   const points = shown.flatMap((p) => p.points);
   const chartData = useMemo(() => {
@@ -98,35 +111,22 @@ function RateChart({ providers, visible, range, from, to, mode }) {
         byTime.set(point.t, row);
       }
     }
-    const rows = [...byTime.values()].sort((a, b) => a.t - b.t);
-
-    // Recharts activates an axis tooltip at data rows. Add interpolated hover
-    // positions between the real 10-minute rows so the tooltip works along the
-    // whole line rather than only at each point.
-    const step = 2 * 60 * 1000;
-    const dense = [];
-    for (let i = 0; i < rows.length - 1; i++) {
-      const a = rows[i], b = rows[i + 1];
-      dense.push(a);
-      for (let t = a.t + step; t < b.t; t += step) {
-        const ratio = (t - a.t) / (b.t - a.t);
-        const row = { t, _interpolated: true };
-        for (const provider of shown) {
-          const av = a[provider.key], bv = b[provider.key];
-          if (Number.isFinite(av) && Number.isFinite(bv)) row[provider.key] = av + (bv - av) * ratio;
-          const aa = a[`${provider.key}__abs`], ba = b[`${provider.key}__abs`];
-          if (Number.isFinite(aa) && Number.isFinite(ba)) row[`${provider.key}__abs`] = aa + (ba - aa) * ratio;
-        }
-        dense.push(row);
-      }
-    }
-    if (rows.length) dense.push(rows[rows.length - 1]);
-    return dense;
+    return [...byTime.values()].sort((a, b) => a.t - b.t);
   }, [shown, mode]);
 
   // Real (non-interpolated) point count — used to hide dots when the line is dense.
   const realCount = chartData.filter((r) => !r._interpolated).length;
-  const showDots = realCount <= 160;
+  const tooltipPayload = hoveredPoint
+    ? shown
+      .filter((provider) => Number.isFinite(hoveredPoint.row[provider.key]))
+      .map((provider, i) => ({
+        dataKey: provider.key,
+        name: provider.label,
+        value: hoveredPoint.row[provider.key],
+        color: colorFor(provider.key, Math.max(0, providers.findIndex((p) => p.key === provider.key))),
+        payload: hoveredPoint.row,
+      }))
+    : [];
 
   if (!points.length) return <div className="history-empty">No automatic rate history has been collected for this selection yet.</div>;
 
@@ -168,16 +168,6 @@ function RateChart({ providers, visible, range, from, to, mode }) {
             width={72}
             tickFormatter={(v) => mode === "movement" ? signed(v) : `${Math.round(v / 1000)}k`}
           />
-          <Tooltip
-            shared
-            trigger="hover"
-            cursor={false}
-            content={<RateTooltip mode={mode} />}
-            isAnimationActive
-            animationDuration={120}
-            animationEasing="ease-out"
-            allowEscapeViewBox={{ x: false, y: false }}
-          />
           {/* Render GME (the anchor) LAST so its line sits on top and is never
               hidden where the movement lines overlap near zero. */}
           {[...shown]
@@ -193,8 +183,14 @@ function RateChart({ providers, visible, range, from, to, mode }) {
                   type="natural"
                   stroke={color}
                   strokeWidth={isGme ? 3 : 2}
-                  dot={showDots ? <HourlyDot /> : false}
-                  activeDot={{ r: 5, fill: "var(--card)", strokeWidth: 2 }}
+                  dot={(
+                    <HourlyDot
+                      sparse={realCount > 160}
+                      onPointEnter={(row, x, y) => setHoveredPoint({ row, x, y })}
+                      onPointLeave={() => setHoveredPoint(null)}
+                    />
+                  )}
+                  activeDot={false}
                   connectNulls
                   isAnimationActive
                   animationDuration={550}
@@ -204,6 +200,17 @@ function RateChart({ providers, visible, range, from, to, mode }) {
             })}
         </LineChart>
       </ResponsiveContainer>
+      {hoveredPoint ? (
+        <div
+          className="history-point-tooltip"
+          style={{
+            "--tooltip-x": `${hoveredPoint.x + 12}px`,
+            "--tooltip-y": `${hoveredPoint.y + 12}px`,
+          } as any}
+        >
+          <RateTooltip active payload={tooltipPayload} label={hoveredPoint.row.t} mode={mode} />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -493,8 +493,16 @@ label { font-weight: 600; display: block; margin-top: 16px; font-size: 14px; }
 .history-skeleton-line.line-two { top: 52%; transform: rotate(1.5deg); }
 .history-skeleton-line.line-three { top: 70%; transform: rotate(-1deg); }
 .shadcn-chart-container {
-  width: 100%; height: 390px; margin-top: 4px; color: var(--muted);
+  position: relative; width: 100%; height: 390px; margin-top: 4px; color: var(--muted);
   font-size: 11px; font-variant-numeric: tabular-nums; overflow: hidden; border-radius: 10px;
+}
+.history-point { cursor: pointer; pointer-events: all; }
+.history-point:hover { stroke-width: 3; }
+.history-point-tooltip {
+  position: absolute; z-index: 5;
+  left: clamp(8px, var(--tooltip-x), calc(100% - 220px));
+  top: clamp(8px, var(--tooltip-y), calc(100% - 250px));
+  pointer-events: none;
 }
 .shadcn-chart-container .recharts-wrapper { overflow: hidden; }
 .shadcn-chart-container .recharts-surface { overflow: hidden; }
