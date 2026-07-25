@@ -10,14 +10,18 @@
 import { appendFile, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { page, siteHeader } from "./theme";
+import { redisEnabled, rpushCapped, ltail } from "./redis";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const FILE = join(STATE_DIR, "events.jsonl");
 const MAX_READ = 8 * 1024 * 1024; // only aggregate the tail of very large logs
+const EKEY = "events";
+const EVENTS_CAP = 200_000;       // Redis list length cap (aggregate the tail)
 
 export function logEvent(ev) {
-  const line = JSON.stringify({ t: new Date().toISOString(), ...ev }) + "\n";
-  appendFile(FILE, line).catch((e) => console.error("analytics write failed:", e.message));
+  const rec = { t: new Date().toISOString(), ...ev };
+  if (redisEnabled()) { rpushCapped(EKEY, rec, EVENTS_CAP); return; }
+  appendFile(FILE, JSON.stringify(rec) + "\n").catch((e) => console.error("analytics write failed:", e.message));
 }
 
 const dayKey = (d) => {
@@ -33,19 +37,22 @@ const pct = (arr, p) => {
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
 
 export async function readStats() {
-  let raw = "";
-  try {
-    const st = await stat(FILE);
-    const fh = await readFile(FILE, "utf8");
-    raw = st.size > MAX_READ ? fh.slice(-MAX_READ) : fh;
-  } catch {
-    return null; // no events yet
-  }
-
-  const events = [];
-  for (const line of raw.split("\n")) {
-    if (!line.trim()) continue;
-    try { events.push(JSON.parse(line)); } catch { /* skip partial line */ }
+  let events = [];
+  if (redisEnabled()) {
+    events = await ltail(EKEY, EVENTS_CAP);
+  } else {
+    let raw = "";
+    try {
+      const st = await stat(FILE);
+      const fh = await readFile(FILE, "utf8");
+      raw = st.size > MAX_READ ? fh.slice(-MAX_READ) : fh;
+    } catch {
+      return null; // no events yet
+    }
+    for (const line of raw.split("\n")) {
+      if (!line.trim()) continue;
+      try { events.push(JSON.parse(line)); } catch { /* skip partial line */ }
+    }
   }
   if (!events.length) return null;
 

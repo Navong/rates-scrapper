@@ -12,6 +12,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { COUNTRIES } from "./countries";
+import { redisEnabled, jget, jset, rpushCapped, publish, subscribe } from "./redis";
 
 // Manual rates are stored per payout method, because a provider (e.g. Sentbe in
 // Cambodia) can quote a different rate for Bank Deposit vs Cash Payment.
@@ -22,6 +23,11 @@ const STATE_DIR = process.env.STATE_DIR || ".";
 const FILE = join(STATE_DIR, "manual.json");
 const LEGACY = join(STATE_DIR, "sentbe.json");
 const AUDIT = join(STATE_DIR, "manual-audit.jsonl");
+// Redis keys (used when REDIS_URL is set — shared across instances).
+const MKEY = "manual";
+const MAUDIT = "manual-audit";
+const MCHANNEL = "manual:changed";
+const AUDIT_CAP = 5000;
 
 export const MANUAL_TTL = Number(process.env.MANUAL_TTL_HOURS ?? 1) * 3600_000;
 // Past the window the value is untrusted. No separate "stale" grace band — once
@@ -58,6 +64,10 @@ function migrate(raw) {
 // would silently wipe every manual rate. Strip it before parsing.
 const readJson = (f) => JSON.parse(readFileSync(f, "utf8").replace(/^﻿/, ""));
 
+// Initial load from the local file. When Redis is the source of truth this is
+// just a migration seed (initManual overwrites from Redis, or seeds Redis with
+// it on first run). With no Redis it's the live store, so a corrupt file still
+// fails loudly rather than silently serving a table with no manual rows.
 (function load() {
   try {
     if (existsSync(FILE)) store = migrate(readJson(FILE));
@@ -65,17 +75,29 @@ const readJson = (f) => JSON.parse(readFileSync(f, "utf8").replace(/^﻿/, ""));
       const old = readJson(LEGACY); // { bd, cp }
       if (old?.bd) store = migrate({ KH: { SENTBE: { value: old.bd, at: null, by: "" } } });
     }
-  } catch (e) {
-    console.error("manual store load FAILED — refusing to start with an empty store:", e.message);
-    throw e; // fail loudly rather than silently serve a table with no manual rows
+  } catch (e: any) {
+    console.error("manual store file load failed:", e.message);
+    if (!redisEnabled()) throw e; // no Redis → this file IS the store; don't start empty
   }
 })();
 
+/** Hydrate the in-memory store from Redis (shared source of truth) and subscribe
+ *  to cross-instance edits. Call once at boot; no-op without Redis. */
+export async function initManual() {
+  if (!redisEnabled()) return;
+  const remote = await jget<any>(MKEY);
+  if (remote && typeof remote === "object") store = remote;   // Redis wins
+  else await jset(MKEY, store);                                // first run → seed from file
+  // Another instance edited a rate → reload our copy.
+  subscribe(MCHANNEL, async () => { const s = await jget<any>(MKEY); if (s) store = s; });
+}
+
 function persist() {
+  if (redisEnabled()) { jset(MKEY, store); publish(MCHANNEL, { t: Date.now() }); return; }
   try {
     mkdirSync(STATE_DIR, { recursive: true });
     writeFileSync(FILE, JSON.stringify(store, null, 2));
-  } catch (e) {
+  } catch (e: any) {
     console.error("manual store save failed:", e.message);
   }
 }
@@ -102,9 +124,9 @@ export function setEntry(code, prov, method, value, by = "") {
   store[code][prov] = store[code][prov] || {};
   store[code][prov][method] = { value, at: new Date().toISOString(), by };
   persist();
-  try {
-    appendFileSync(AUDIT, JSON.stringify({ t: new Date().toISOString(), code, prov, method, from: prev?.value ?? null, to: value, by }) + "\n");
-  } catch { /* audit is best-effort */ }
+  const audit = { t: new Date().toISOString(), code, prov, method, from: prev?.value ?? null, to: value, by };
+  if (redisEnabled()) rpushCapped(MAUDIT, audit, AUDIT_CAP);
+  else try { appendFileSync(AUDIT, JSON.stringify(audit) + "\n"); } catch { /* audit is best-effort */ }
   return store[code][prov][method];
 }
 

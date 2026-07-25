@@ -10,10 +10,15 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
+import { redisEnabled, jget, jset, rpushCapped, publish, subscribe } from "./redis";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const FILE = join(STATE_DIR, "fees.json");
 const AUDIT = join(STATE_DIR, "fees-audit.jsonl");
+const FKEY = "fees";
+const FAUDIT = "fees-audit";
+const FCHANNEL = "fees:changed";
+const AUDIT_CAP = 5000;
 
 let store = {}; // { code: { provider: { method: number } } }
 
@@ -23,18 +28,33 @@ const readJson = (f) => JSON.parse(readFileSync(f, "utf8").replace(/^﻿/, ""));
 (function load() {
   try {
     if (existsSync(FILE)) store = readJson(FILE);
-  } catch (e) {
+  } catch (e: any) {
     console.error("fee store load failed:", e.message);
   }
 })();
 
+/** Hydrate fees from Redis + subscribe to cross-instance edits. No-op without Redis. */
+export async function initFees() {
+  if (!redisEnabled()) return;
+  const remote = await jget<any>(FKEY);
+  if (remote && typeof remote === "object") store = remote;
+  else await jset(FKEY, store); // first run → seed from file
+  subscribe(FCHANNEL, async () => { const s = await jget<any>(FKEY); if (s) store = s; });
+}
+
 function persist() {
+  if (redisEnabled()) { jset(FKEY, store); publish(FCHANNEL, { t: Date.now() }); return; }
   try {
     mkdirSync(STATE_DIR, { recursive: true });
     writeFileSync(FILE, JSON.stringify(store, null, 2));
-  } catch (e) {
+  } catch (e: any) {
     console.error("fee store save failed:", e.message);
   }
+}
+
+function audit(entry) {
+  if (redisEnabled()) rpushCapped(FAUDIT, entry, AUDIT_CAP);
+  else try { appendFileSync(AUDIT, JSON.stringify(entry) + "\n"); } catch { /* best-effort */ }
 }
 
 export const getFeeStore = () => store;
@@ -54,9 +74,7 @@ export function setFee(code, prov, method, value, by = "") {
   store[code][prov] = store[code][prov] || {};
   store[code][prov][method] = value;
   persist();
-  try {
-    appendFileSync(AUDIT, JSON.stringify({ t: new Date().toISOString(), code, prov, method, from: prev ?? null, to: value, by }) + "\n");
-  } catch { /* audit is best-effort */ }
+  audit({ t: new Date().toISOString(), code, prov, method, from: prev ?? null, to: value, by });
 }
 
 /** Remove an override so the row falls back to the config default. */

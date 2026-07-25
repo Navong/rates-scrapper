@@ -76,6 +76,51 @@ export async function jset(key: string, value: unknown, ttlSec?: number): Promis
   } catch { /* durable layer is best-effort */ }
 }
 
+/** Append a JSON value to a Redis list, capping its length (best-effort). */
+export async function rpushCapped(key: string, value: unknown, cap: number): Promise<void> {
+  const c = redis();
+  if (!c) return;
+  try {
+    const n = await c.rpush(key, JSON.stringify(value));
+    if (n > cap * 1.1) await c.ltrim(key, -cap, -1); // trim only occasionally past the cap
+  } catch { /* best-effort */ }
+}
+/** Read the last `n` JSON entries of a list (oldest→newest), [] on any error. */
+export async function ltail<T>(key: string, n: number): Promise<T[]> {
+  const c = redis();
+  if (!c) return [];
+  try {
+    const raw = await c.lrange(key, -n, -1);
+    const out: T[] = [];
+    for (const s of raw) { try { out.push(JSON.parse(s)); } catch { /* skip */ } }
+    return out;
+  } catch { return []; }
+}
+
+/** Fire-and-forget publish of a JSON message to a channel. */
+export function publish(channel: string, msg: unknown): void {
+  const c = redis();
+  if (!c) return;
+  try { c.publish(channel, JSON.stringify(msg)); } catch { /* best-effort */ }
+}
+
+/** Subscribe to a channel on a DEDICATED connection (a subscribed client can't
+ *  run normal commands). `handler` gets the parsed JSON. No-op without Redis. */
+export function subscribe(channel: string, handler: (msg: any) => void): void {
+  const c = redis();
+  if (!c) return;
+  try {
+    const sub = c.duplicate();
+    sub.on("error", () => { /* subscriber errors are non-fatal */ });
+    sub.subscribe(channel).catch(() => {});
+    sub.on("message", (_ch: string, payload: string) => {
+      let m: any = null;
+      try { m = JSON.parse(payload); } catch { /* ignore */ }
+      handler(m);
+    });
+  } catch { /* best-effort */ }
+}
+
 // Release only if we still own the lock (compare-and-delete), so a slow holder
 // can't delete a lock a newer holder acquired.
 const UNLOCK = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
