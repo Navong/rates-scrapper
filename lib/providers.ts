@@ -306,7 +306,13 @@ const SINGLE_RATE = { SBI: fetchSbi, COINSHOT: fetchCoinshot, UTRANSFER: fetchUt
  * the total is recomputed from the exchange principal.
  */
 function applyFee(country, r) {
-  const fee = country.providers[r.provider]?.fee?.[r.method];
+  const provider = country.providers[r.provider];
+  // Some APIs return the exact business-table total without exposing a
+  // separate fee. Keep that total intact while displaying a zero fee.
+  if (provider?.totalIncludesFee) {
+    return { ...r, principalKRW: r.sendTotalKRW, feeKRW: 0 };
+  }
+  const fee = provider?.fee?.[r.method];
   if (fee == null) return r;
   return { ...r, feeKRW: fee, sendTotalKRW: r.principalKRW + fee };
 }

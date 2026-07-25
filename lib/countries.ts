@@ -88,17 +88,22 @@ export const COUNTRIES = {
     flag: "🇮🇩",
     currency: "IDR",
     receiveAmount: 13000000,
-    anchor: "GME",
+    anchor: "GME_BNI",
     methods: [{ key: "BANK", label: "Bank Deposit" }],
     // Fees seeded from each provider's own API. Adjust here if the business
     // fee table differs — this column is authoritative for the sheet.
     providers: {
-      GME:     { countryName: "Indonesia", deliveryMethod: { BANK: "2" }, fee: { BANK: 5000 } },
-      E9PAY:   { nation: { BANK: "ID01" }, fee: { BANK: 5000 } },
-      HANPASS: { countryCode: "ID", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
-      GMONEY:  { country: "Indonesia", payment: { BANK: "Bank Account" }, fee: { BANK: 2500 } },
-      JRF:     { type: { BANK: "Bank Transfer" }, fee: { BANK: 4500 } },
-      CROSS:   { platform: 68, rateUnit: 100, fee: { BANK: 5000 } }, // crossenf.com quote API
+      GME_BNI:   { api: "GME", label: "GME (BNI)", countryName: "Indonesia", deliveryMethod: { BANK: "2" }, totalIncludesFee: true, fee: { BANK: 0 } },
+      E9PAY:     { nation: { BANK: "ID01" }, fee: { BANK: 5000 } },
+      SENTBE:    { manual: true, fee: { BANK: 5000 } },
+      SBI:       { countryId: "INDONESIA", fee: { BANK: 5000 } },
+      COINSHOT:  { fee: { BANK: 2500 } },
+      GME_BRI:   { manual: true, label: "GME (BRI)", fee: { BANK: 0 } },
+      JRF:       { type: { BANK: "Bank Transfer" }, fee: { BANK: 5000 } },
+      UTRANSFER: { fee: { BANK: 5000 } },
+      GMONEY:    { country: "Indonesia", payment: { BANK: "Bank Account" }, fee: { BANK: 2500 } },
+      HANPASS:   { countryCode: "ID", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
+      CROSS:     { platform: 68, rateUnit: 100, fee: { BANK: 0 } }, // crossenf.com quote API
     },
   },
 
@@ -235,6 +240,23 @@ export const COUNTRIES = {
       CROSS:     { platform: 80, rateUnit: 1, fee: { BANK: 5000 } }, // crossenf.com quote API
       // No public rate API → entered manually on the sheet.
       WIREBARLEY:{ manual: true, fee: { BANK: 3000 } },
+    },
+  },
+
+  ZA: {
+    code: "ZA",
+    name: "South Africa",
+    flag: "🇿🇦",
+    currency: "ZAR",
+    receiveAmount: 10000,
+    anchor: "GME",
+    methods: [{ key: "BANK", label: "Bank Deposit" }],
+    // Public calculator parameters verified live for ZAR 10,000.
+    providers: {
+      GMONEY:  { country: "South Africa", payment: { BANK: "Bank Account" }, fee: { BANK: 5000 } },
+      GME:     { countryName: "South Africa", deliveryMethod: { BANK: "2" }, fee: { BANK: 5000 } },
+      HANPASS: { countryCode: "ZA", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
+      SENTBE:  { manual: true, fee: { BANK: 5000 } },
     },
   },
 
