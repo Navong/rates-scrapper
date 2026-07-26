@@ -256,8 +256,9 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
   );
 
   const curAmount = d ? ((methods.find((m) => m.key === curMethod)?.receiveAmount) ?? d.receiveAmount) : 0;
+  const curCurrency = d ? ((methods.find((m) => m.key === curMethod)?.currency) ?? d.currency) : "";
   const sub = d
-    ? <>{d.flag} {d.name} · receive {curAmount.toLocaleString("en-US")} {d.currency}{mounted && at ? ` · updated ${new Date(at).toLocaleTimeString()}` : ""}</>
+    ? <>{d.flag} {d.name} · receive {curAmount.toLocaleString("en-US")} {curCurrency}{mounted && at ? ` · updated ${new Date(at).toLocaleTimeString()}` : ""}</>
     : "Loading…";
 
   // Exclude no-rate / unset manual rows so an expired competitor never shows as

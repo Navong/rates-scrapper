@@ -21,7 +21,7 @@ There is **no test suite / linter config**. Verify changes by running the server
 
 **Deployment is Docker-only.** `docker compose up -d --build` on the dev host, or `./pi-update.sh [vX.Y.Z]` on the Raspberry Pi (pulls the prebuilt image — see [docs/](docs/) and the README). `start-host-docker.bat` waits for the Docker engine then brings the stack up; a Startup shortcut (optionally via `launch-hidden.vbs`) can run it hidden at logon. The app sits behind a shared **cloudflared** tunnel on `127.0.0.1:8787` — run it from the **residential IP** (some providers, esp. SBI, block datacenter/cloud IPs).
 
-**Key env vars:** `RATES_TOKEN` (machine API token, also `x-api-token` header), `ACCESS_PASSWORD` (web login, default `gme`), `CACHE_TTL` (seconds; also sets the warmer's full-cycle time), `GME_TTL`, `STATE_DIR` (persistent data dir, default `.`; production uses `data/`), `TZ=Asia/Seoul`, `MAX_STALE` (SWR ceiling, default 900s), `WARMER=off` to disable the warmer, `MANUAL_TTL_HOURS` (default 1), `PROVIDER_TTL` (per-provider memo), `REDIS_URL` (shared cache store; unset = in-memory + JSON file, single instance).
+**Key env vars:** `RATES_TOKEN` (machine API token, also `x-api-token` header), `ACCESS_PASSWORD` (web login, default `gme`), `CACHE_TTL` (seconds; also sets the warmer's full-cycle time), `GME_TTL`, `STATE_DIR` (persistent data dir, default `.`; production uses `data/`), `TZ=Asia/Seoul`, `MAX_STALE` (SWR ceiling, default 900s), `WARMER=off` to disable the warmer, `MANUAL_TTL_MINUTES` (default 30; legacy `MANUAL_TTL_HOURS` remains supported), `PROVIDER_TTL` (per-provider memo), `REDIS_URL` (shared cache store; unset = in-memory + JSON file, single instance).
 
 ## Routes
 

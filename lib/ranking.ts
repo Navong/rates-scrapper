@@ -12,7 +12,7 @@
 //
 // Manual providers (Sentbe, FoneMoney, Cross…) come from the saved manual bases.
 
-import { PROVIDER_LABEL, countryList, anchorOf, providerInMethod } from "./countries";
+import { PROVIDER_LABEL, countryList, anchorOf, providerInMethod, currencyFor } from "./countries";
 import { page, countryTabs, siteHeader } from "./theme";
 import { statusOf, humanAge } from "./manual";
 import { feeFor, getFeeOverride } from "./fees";
@@ -159,7 +159,7 @@ function serviceTable(country, service, rows, dateStr, timeStr, showCountry = tr
   </tr>`;
   const head = `<tr>
     ${showCountry ? "<th>Country</th>" : ""}<th>Service</th><th>Competitor</th>
-    <th>FCY(${esc(country.currency)})</th><th>KRW ①</th><th>Service fee ②</th>
+    <th>FCY(${esc(currencyFor(country, service.key))})</th><th>KRW ①</th><th>Service fee ②</th>
     <th class="b">Total price ①+②</th><th>Price gap</th>
   </tr>`;
 

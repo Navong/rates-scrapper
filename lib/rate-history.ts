@@ -5,6 +5,7 @@
 import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { redisEnabled, rpushCapped, ltail } from "./redis";
+import { currencyFor } from "./countries";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -129,7 +130,7 @@ export async function readRateHistory(country, method, range = "today") {
 
   return {
     country: country.code,
-    currency: country.currency,
+    currency: currencyFor(country, method),
     method,
     range: range === "today" ? "today" : "7d",
     from: cutoff,

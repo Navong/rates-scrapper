@@ -1,12 +1,12 @@
 // Manual provider rates (Sentbe, FoneMoney, Cross, Hana EZ) — the ones with no
-// public rate API. Stored with a timestamp so a value typed an hour ago can never
+// public rate API. Stored with a timestamp so an old typed value can never
 // masquerade as live data.
 //
-//   fresh   : younger than MANUAL_TTL (1h)     → shown normally
+//   fresh   : younger than MANUAL_TTL (30m)    → shown normally
 //   expired : older than MANUAL_TTL            → shown as "-" (must be re-entered)
 //   unset   : never entered                    → shown as "-", flagged on the form
 //
-// The value must be refreshed every hour. Once it lapses we no longer trust the
+// The value must be refreshed every 30 minutes. Once it lapses we no longer trust the
 // number for the Price gap column, so the sheet renders "-" instead of guessing.
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
@@ -29,14 +29,24 @@ const MAUDIT = "manual-audit";
 const MCHANNEL = "manual:changed";
 const AUDIT_CAP = 5000;
 
-export const MANUAL_TTL = Number(process.env.MANUAL_TTL_HOURS ?? 1) * 3600_000;
+const manualTtlMinutes = process.env.MANUAL_TTL_MINUTES != null
+  ? Number(process.env.MANUAL_TTL_MINUTES)
+  // Keep an explicitly configured legacy deployment working.
+  : process.env.MANUAL_TTL_HOURS != null
+    ? Number(process.env.MANUAL_TTL_HOURS) * 60
+    : 30;
+export const MANUAL_TTL = manualTtlMinutes * 60_000;
 // Past the window the value is untrusted. No separate "stale" grace band — once
-// an hour lapses it's expired and the sheet shows "-" until it's re-entered.
+// 30 minutes lapse, it's expired and the sheet shows "-" until it's re-entered.
 export const MANUAL_EXPIRE = MANUAL_TTL;
 /** Reject entries deviating more than this % from the scraped peers. */
 export const MAX_DEVIATION_PCT = Number(process.env.MANUAL_DEVIATION_PCT ?? 3);
 
-let store = {}; // { KH: { SENTBE: { BANK: {value,at,by}, WALLET: {value,at,by} } } }
+// Next dev compiles instrumentation and route handlers into separate module
+// graphs. A global store keeps both graphs (and hot reloads) on the same
+// Redis-hydrated object.
+const S = (globalThis as any).__manualState ??= { store: {} };
+// shape: { KH: { SENTBE: { BANK: {value,at,by}, WALLET: {value,at,by} } } }
 
 // Bring older shapes forward to the per-method map:
 //   - bare number            → { [each method]: {value, at:null, by:""} }
@@ -70,10 +80,10 @@ const readJson = (f) => JSON.parse(readFileSync(f, "utf8").replace(/^﻿/, ""));
 // fails loudly rather than silently serving a table with no manual rows.
 (function load() {
   try {
-    if (existsSync(FILE)) store = migrate(readJson(FILE));
+    if (existsSync(FILE)) S.store = migrate(readJson(FILE));
     else if (existsSync(LEGACY)) {
       const old = readJson(LEGACY); // { bd, cp }
-      if (old?.bd) store = migrate({ KH: { SENTBE: { value: old.bd, at: null, by: "" } } });
+      if (old?.bd) S.store = migrate({ KH: { SENTBE: { value: old.bd, at: null, by: "" } } });
     }
   } catch (e: any) {
     console.error("manual store file load failed:", e.message);
@@ -86,24 +96,24 @@ const readJson = (f) => JSON.parse(readFileSync(f, "utf8").replace(/^﻿/, ""));
 export async function initManual() {
   if (!redisEnabled()) return;
   const remote = await jget<any>(MKEY);
-  if (remote && typeof remote === "object") store = remote;   // Redis wins
-  else await jset(MKEY, store);                                // first run → seed from file
+  if (remote && typeof remote === "object") S.store = remote; // Redis wins
+  else await jset(MKEY, S.store);                              // first run → seed from file
   // Another instance edited a rate → reload our copy.
-  subscribe(MCHANNEL, async () => { const s = await jget<any>(MKEY); if (s) store = s; });
+  subscribe(MCHANNEL, async () => { const next = await jget<any>(MKEY); if (next) S.store = next; });
 }
 
 function persist() {
-  if (redisEnabled()) { jset(MKEY, store); publish(MCHANNEL, { t: Date.now() }); return; }
+  if (redisEnabled()) { jset(MKEY, S.store); publish(MCHANNEL, { t: Date.now() }); return; }
   try {
     mkdirSync(STATE_DIR, { recursive: true });
-    writeFileSync(FILE, JSON.stringify(store, null, 2));
+    writeFileSync(FILE, JSON.stringify(S.store, null, 2));
   } catch (e: any) {
     console.error("manual store save failed:", e.message);
   }
 }
 
-export const getStore = () => store;
-export const getEntry = (code, prov, method) => store?.[code]?.[prov]?.[method] ?? null;
+export const getStore = () => S.store;
+export const getEntry = (code, prov, method) => S.store?.[code]?.[prov]?.[method] ?? null;
 
 /** @returns {{status:"unset"|"fresh"|"stale"|"expired", ageMs:number|null, at:string|null}} */
 export function statusOf(entry) {
@@ -120,14 +130,14 @@ export const usable = (entry) => statusOf(entry).status !== "expired" && statusO
 
 export function setEntry(code, prov, method, value, by = "") {
   const prev = getEntry(code, prov, method);
-  store[code] = store[code] || {};
-  store[code][prov] = store[code][prov] || {};
-  store[code][prov][method] = { value, at: new Date().toISOString(), by };
+  S.store[code] = S.store[code] || {};
+  S.store[code][prov] = S.store[code][prov] || {};
+  S.store[code][prov][method] = { value, at: new Date().toISOString(), by };
   persist();
   const audit = { t: new Date().toISOString(), code, prov, method, from: prev?.value ?? null, to: value, by };
   if (redisEnabled()) rpushCapped(MAUDIT, audit, AUDIT_CAP);
   else try { appendFileSync(AUDIT, JSON.stringify(audit) + "\n"); } catch { /* audit is best-effort */ }
-  return store[code][prov][method];
+  return S.store[code][prov][method];
 }
 
 export function humanAge(ageMs) {

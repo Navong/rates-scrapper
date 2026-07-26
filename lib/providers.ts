@@ -5,7 +5,7 @@
 // country's fixed receive amount).
 
 import { gmeFetch, limited } from "./limiter";
-import { amountFor, providerInMethod } from "./countries";
+import { amountFor, currencyFor, providerInMethod } from "./countries";
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
 
@@ -358,7 +358,12 @@ export async function collectCountry(country, opts = {}) {
     for (const m of country.methods) {
       if (!providerInMethod(cfg, m.key)) continue; // channel scoped to other methods
       const who = `${prov}/${m.key}`;
-      jobs.push({ who, p: withTimeout(fn(country, m.key, opts, prov), who) });
+      const methodCountry = {
+        ...country,
+        currency: currencyFor(country, m.key),
+        receiveAmount: amountFor(country, m.key),
+      };
+      jobs.push({ who, p: withTimeout(fn(methodCountry, m.key, opts, prov), who) });
     }
   }
 

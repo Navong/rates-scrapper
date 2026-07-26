@@ -64,7 +64,7 @@ function drawServiceTable(ctx, d, service, rows, x, y, dateStr, timeStr) {
   drawCell(ctx, xs[7], y, SHEET_COLS[7], STAMP_H, timeStr, { align: "right", bold: true });
   y += STAMP_H;
 
-  ["Country", "Service", "Competitor", `FCY(${d.currency})`, "KRW ①", "Service fee ②", "Total price ①+②", "Price gap"]
+  ["Country", "Service", "Competitor", `FCY(${service.currency ?? d.currency})`, "KRW ①", "Service fee ②", "Total price ①+②", "Price gap"]
     .forEach((h, i) => drawCell(ctx, xs[i], y, SHEET_COLS[i], ROW_H, h, { bg: "#f2f4f6", bold: true }));
   y += ROW_H;
 
@@ -197,7 +197,7 @@ function ServiceTable({ d, service, rows, dateStr, timeStr }) {
         </tr>
         <tr>
           <th>Country</th><th>Service</th><th>Competitor</th>
-          <th>FCY({d.currency})</th><th>KRW ①</th><th>Service fee ②</th>
+          <th>FCY({service.currency ?? d.currency})</th><th>KRW ①</th><th>Service fee ②</th>
           <th className="b">Total price ①+②</th><th>Price gap</th>
         </tr>
         {rows.map((r, i) => {

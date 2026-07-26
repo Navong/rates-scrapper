@@ -268,6 +268,114 @@ export const COUNTRIES = {
     },
   },
 
+  TL: {
+    code: "TL",
+    name: "Timor-Leste",
+    flag: "🇹🇱",
+    currency: "USD",
+    receiveAmount: 1000,
+    anchor: "GME",
+    grid: true,
+    // GME returns the same USD quote for bank and cash. Fetch once and mirror
+    // it across the three business channels to avoid unnecessary rate-limit use.
+    gmeSingleRate: true,
+    methods: [
+      { key: "BANK", label: "Bank Deposit (BNCTL)" },
+      { key: "CASH_MG", label: "Cash Payment MG" },
+      { key: "CASH_WU", label: "Cash Payment WU" },
+    ],
+    providers: {
+      GME: {
+        countryName: "Timor-Leste",
+        deliveryMethod: { BANK: "2", CASH_MG: "1", CASH_WU: "1" },
+        fee: { BANK: 5000, CASH_MG: 5000, CASH_WU: 5000 },
+      },
+      HANPASS: {
+        countryCode: "TL",
+        option: { BANK: "BANK_TRANSFER", CASH_MG: "CASH_PICK_UP", CASH_WU: "CASH_PICK_UP" },
+        fee: { BANK: 5000, CASH_MG: 5000, CASH_WU: 5000 },
+      },
+      GMONEY: {
+        country: "Timor-Leste",
+        payment: { BANK: "Bank Account", CASH_MG: "Cash Pickup" },
+        methods: ["BANK", "CASH_MG"],
+        fee: { BANK: 0, CASH_MG: 0 },
+      },
+    },
+  },
+
+  RU: {
+    code: "RU",
+    name: "Russia",
+    flag: "🇷🇺",
+    currency: "RUB",
+    receiveAmount: 10000,
+    anchor: { CARD: "GME", CASH: null },
+    methods: [
+      { key: "CARD", label: "Card Payment" },
+      { key: "CASH", label: "Cash Payment" },
+    ],
+    providers: {
+      GME: {
+        countryName: "Russian Federation",
+        deliveryMethod: { CARD: "14" },
+        methods: ["CARD"],
+        fee: { CARD: 5000 },
+      },
+      E9PAY_CARD: {
+        api: "E9PAY", label: "E9pay", nation: { CARD: "RU19" },
+        methods: ["CARD"], fee: { CARD: 2000 },
+      },
+      // The public Russia cash channel is USD-only; this table is RUB 10,000.
+      E9PAY_CASH: {
+        manual: true, label: "E9pay", methods: ["CASH"], fee: { CASH: 7000 },
+      },
+    },
+  },
+
+  UZ: {
+    code: "UZ",
+    name: "Uzbekistan",
+    flag: "🇺🇿",
+    currency: "USD",
+    receiveAmount: 1000,
+    anchor: "GME",
+    methods: [
+      { key: "CASH", label: "Cash Payment", currency: "USD", receiveAmount: 1000 },
+      { key: "CARD", label: "Card Payment", currency: "UZS", receiveAmount: 1000000 },
+    ],
+    providers: {
+      GME: {
+        countryName: "Uzbekistan",
+        deliveryMethod: { CASH: "1", CARD: "26" },
+        fee: { CASH: 5000, CARD: 2000 },
+      },
+      E9PAY: {
+        nation: { CASH: "UZ01", CARD: "UZ15" },
+        fee: { CASH: 7000, CARD: 2000 },
+      },
+      HANPASS: {
+        countryCode: "UZ",
+        option: { CASH: "CASH_PICK_UP", CARD: "CARD_TRANSFER" },
+        fee: { CASH: 5000, CARD: 2500 },
+      },
+      GMONEY_CASH: {
+        api: "GMONEY", label: "Gmoney", country: "Uzbekistan",
+        payment: { CASH: "Cash Pickup" }, methods: ["CASH"], fee: { CASH: 5000 },
+      },
+      GMONEY_CARD: {
+        manual: true, label: "Gmoney", methods: ["CARD"], fee: { CARD: 2000 },
+      },
+      COINSHOT: {
+        manual: true, label: "Coinshot", methods: ["CASH"], fee: { CASH: 8000 },
+      },
+      SENTBE: {
+        manual: true, label: "SentBe", methods: ["CASH", "CARD"],
+        fee: { CASH: 5000, CARD: 1000 },
+      },
+    },
+  },
+
   MM: {
     code: "MM",
     name: "Myanmar",
@@ -324,6 +432,9 @@ export const MANUAL_PROVIDERS = ["SENTBE", "FONEMONEY", "HANAEZ"];
 // The receive amount for a method (methods may override the corridor default).
 export const amountFor = (country, mkey) =>
   country.methods.find((m) => m.key === mkey)?.receiveAmount ?? country.receiveAmount;
+
+export const currencyFor = (country, mkey) =>
+  country.methods.find((m) => m.key === mkey)?.currency ?? country.currency;
 
 // The Price-gap anchor for a method. `anchor` is either a provider key (all
 // methods) or a { method: providerKey } map (a specific channel per method).

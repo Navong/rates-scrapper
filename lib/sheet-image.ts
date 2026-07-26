@@ -42,7 +42,7 @@ function serviceTable(d, service, rows, x, y, dateStr, timeStr) {
   s += cell(xs[7], y, SHEET_COLS[7], STAMP_H, timeStr, { align: "right", bold: true });
   y += STAMP_H;
 
-  ["Country", "Service", "Competitor", `FCY(${d.currency})`, "KRW ①", "Service fee ②", "Total price ①+②", "Price gap"]
+  ["Country", "Service", "Competitor", `FCY(${service.currency ?? d.currency})`, "KRW ①", "Service fee ②", "Total price ①+②", "Price gap"]
     .forEach((h, i) => { s += cell(xs[i], y, SHEET_COLS[i], ROW_H, h, { bg: "#f2f4f6", bold: true }); });
   y += ROW_H;
 
