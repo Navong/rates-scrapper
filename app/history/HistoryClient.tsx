@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/select";
 
 const PROVIDER_COLOR = {
-  GME: "#ef1642", E9PAY: "#3b82f6", GMONEY: "#9333ea", HANPASS: "#10b981",
-  SBI: "#f59e0b", JRF: "#0ea5e9", CROSS: "#84cc16",
+  // Keep the graph consistent with the provider colors used in the rate sheet.
+  GME: "#ff0000", E9PAY: "#ffff00", SENTBE: "#9dc3e6",
+  HANPASS: "#cc99ff", SBI: "#00ffff", GMONEY: "#92d050",
+  JRF: "#0ea5e9", CROSS: "#84cc16",
   COINSHOT: "#14b8a6", UTRANSFER: "#f97316", PANDA: "#4b5563",
 };
 // Red is reserved for the GME family so its line is always identifiable.
@@ -67,20 +69,7 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
         byTime.set(point.t, row);
       }
     }
-    const rows = [...byTime.values()].sort((a, b) => a.t - b.t);
-    if (rows.length < 2) return rows;
-
-    // Materialize every expected 30-minute bucket. Empty rows deliberately
-    // break an area instead of letting Recharts draw a smooth, misleading curve
-    // across a period where no snapshots were collected.
-    const interval = 30 * 60 * 1000;
-    const start = rows[0].t;
-    const end = rows[rows.length - 1].t;
-    const dense = [];
-    for (let time = start; time <= end; time += interval) {
-      dense.push(byTime.get(time) || { t: time });
-    }
-    return dense;
+    return [...byTime.values()].sort((a, b) => a.t - b.t);
   }, [chartProviders, mode]);
 
   if (!chartData.length) {
@@ -168,7 +157,7 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
               stroke={color}
               strokeWidth={2}
               hide={!visible.has(provider.key)}
-              connectNulls={false}
+              connectNulls
               isAnimationActive
               animationDuration={500}
             />
@@ -187,7 +176,7 @@ export default function HistoryClient({
   const [country, setCountry] = useState(initialCountry);
   const [method, setMethod] = useState(initialMethod);
   const [range, setRange] = useState(initialRange);
-  const [mode, setMode] = useState("movement");
+  const [mode, setMode] = useState("price");
   const [data, setData] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -294,7 +283,7 @@ export default function HistoryClient({
             <div className="grid flex-1 gap-1">
               <CardTitle>{mode === "movement" ? "Rate movement" : "Total KRW trend"}</CardTitle>
               <CardDescription>
-                {mode === "movement" ? "Deviation from each provider’s average" : "Total KRW required"} · 30-minute snapshots
+                {mode === "movement" ? "Deviation from each provider’s average" : "Total KRW required"} · captured when rates change
               </CardDescription>
             </div>
             <div className="history-card-actions">

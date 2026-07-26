@@ -73,26 +73,26 @@ body {
 .appbar h1 { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: -.02em; margin: 0; }
 .appbar .sub { color: rgba(255, 255, 255, .82); font-size: 12.5px; margin-top: 2px; }
 .appbar .sub a { color: #fff; font-weight: 600; }
-.appstatus { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.rpill { background: rgba(255, 255, 255, .15); border: 1px solid rgba(255, 255, 255, .3); color: #fff;
-  border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 600;
-  display: inline-flex; gap: 7px; align-items: center; cursor: default; text-decoration: none; }
-.rpill b { font-weight: 800; }
-.rpill.live { background: #fff; color: var(--brand); border-color: transparent; }
-.rpill .dotlive { width: 7px; height: 7px; border-radius: 50%; background: #16c784;
-  box-shadow: 0 0 0 3px rgba(22, 199, 132, .3); }
-.appbar .btn { background: rgba(255, 255, 255, .15); border-color: rgba(255, 255, 255, .3); color: #fff; }
-.appbar .btn:hover { background: #fff; color: var(--brand); }
-.appbar .copy-img-btn {
-  background: #fff;
-  border-color: #fff;
-  color: var(--brand);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .18);
-  font-weight: 800;
+.appstatus {
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+  padding: 4px; border: 1px solid rgba(255, 255, 255, .2); border-radius: 12px;
+  background: rgba(108, 0, 20, .16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
 }
-.appbar .copy-img-btn:hover { background: #fff7f8; color: var(--brand-d); transform: translateY(-1px); }
-.appbar .copy-img-btn:disabled { opacity: .65; cursor: not-allowed; transform: none; }
-.appbar .copy-ico { font-size: 15px; line-height: 1; }
+.report-chip, .live-chip {
+  min-height: 36px; padding: 0 11px; border-radius: 8px; color: #fff;
+  display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+  font-size: 12px; font-weight: 600;
+}
+.report-chip { border-left: 1px solid rgba(255, 255, 255, .22); border-radius: 0; margin-left: 3px; }
+.report-chip span { color: rgba(255, 255, 255, .7); font-weight: 500; }
+.report-chip b { font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.live-chip { min-height: 30px; margin: 3px; padding-inline: 10px; background: #fff; color: var(--text); }
+.live-chip .dotlive { width: 7px; height: 7px; border-radius: 50%; background: #16c784;
+  box-shadow: 0 0 0 3px rgba(22, 199, 132, .18); }
+@media (max-width: 640px) {
+  .appstatus { width: 100%; }
+  .report-chip { margin-left: auto; }
+}
 
 /* ---- Stat-counter strip -------------------------------------------------- */
 .statbar { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow);
@@ -273,17 +273,6 @@ label { font-weight: 600; display: block; margin-top: 16px; font-size: 14px; }
 ========================================================================= */
 .dashpage .cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
 @media (max-width: 980px) { .dashpage .cols { grid-template-columns: 1fr; } }
-.dashpage #chart svg { display: block; width: 100%; height: auto; }
-.dashpage .ax { stroke: var(--muted); opacity: .45; stroke-width: 1; }
-.dashpage .axdash { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 4; }
-.dashpage .bar-up { fill: var(--bad); opacity: .9; }
-.dashpage .bar-down { fill: var(--good); opacity: .9; }
-.dashpage .g:hover .bar-up, .dashpage .g:hover .bar-down { opacity: 1; }
-.dashpage .lbl { fill: var(--text); font-size: 11.5px; font-weight: 600; }
-.dashpage .lbl.anchor { fill: var(--bad); }
-.dashpage .val { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.dashpage .val-up { fill: var(--bad); } .dashpage .val-down { fill: var(--good); } .dashpage .val-zero { fill: var(--muted); }
-.dashpage .cap { fill: var(--muted); font-size: 10.5px; }
 .dashpage .note { margin-top: 14px; font-size: 12px; color: var(--muted); line-height: 1.6; }
 .dashpage .note a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .dashpage .mtag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px;

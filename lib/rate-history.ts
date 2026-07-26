@@ -8,22 +8,22 @@ import { redisEnabled, rpushCapped, ltail } from "./redis";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-const SNAPSHOT_INTERVAL_MS = 30 * 60 * 1000;   // sample history every 30 minutes
-const REDIS_CAP = 400;                         // ≈ 8 days of 30-minute snapshots
+const SNAPSHOT_INTERVAL_MS = 30 * 60 * 1000;   // unchanged values still get a 30-minute heartbeat
+const REDIS_CAP = 6000;                        // enough for 7 days of change-driven snapshots
 const RKEY = (code) => `rate-history:${code}`;
 const FILE = (code) => join(STATE_DIR, `rate-history-${code}.jsonl`);
 const lastCompact = new Map();
 const lastSnapshot = new Map();
+const lastSnapshotSignature = new Map();
 
 const finite = (value) => Number.isFinite(Number(value));
 
 export async function recordRateSnapshot(country, records, at = Date.now()) {
-  // The warmer scrapes often to keep the live cache fresh, but history only needs
-  // periodic points — sample at most once per SNAPSHOT_INTERVAL_MS per corridor.
-  if (at - (lastSnapshot.get(country.code) || 0) < SNAPSHOT_INTERVAL_MS) return;
-
   const rows = records
-    .filter((r) => !r.carried && !country.providers[r.provider]?.manual)
+    // Carried values are accepted here only after cache.ts has bounded them by
+    // MAX_STALE. This smooths over a transient provider miss at sample time
+    // without inventing values across a real outage.
+    .filter((r) => !country.providers[r.provider]?.manual)
     .filter((r) => finite(r.sendTotalKRW) && finite(r.rate))
     .map((r) => ({
       p: r.provider,
@@ -32,7 +32,20 @@ export async function recordRateSnapshot(country, records, at = Date.now()) {
       rate: Number(r.rate),
     }));
   if (!rows.length) return;
+
+  // Capture a point as soon as any provider value changes. When the whole
+  // corridor is unchanged, retain a 30-minute heartbeat so flat periods remain
+  // represented without storing every warmer scrape.
+  const signature = rows
+    .slice()
+    .sort((a, b) => `${a.p}/${a.m}`.localeCompare(`${b.p}/${b.m}`))
+    .map((row) => `${row.p}/${row.m}:${row.total}:${row.rate}`)
+    .join("|");
+  const unchanged = signature === lastSnapshotSignature.get(country.code);
+  if (unchanged && at - (lastSnapshot.get(country.code) || 0) < SNAPSHOT_INTERVAL_MS) return;
+
   lastSnapshot.set(country.code, at);
+  lastSnapshotSignature.set(country.code, signature);
 
   const snapshot = { t: at, rows };
   if (redisEnabled()) {
@@ -82,15 +95,22 @@ export async function readRateHistory(country, method, range = "today") {
     .filter((s) => Number(s.t) >= cutoff && Array.isArray(s.rows))
     .sort((a, b) => Number(a.t) - Number(b.t));
 
-  // Bucket both new and previously collected denser history into consistent
-  // 30-minute points. Since snapshots are sorted, the latest value wins.
-  const bucketMs = SNAPSHOT_INTERVAL_MS;
+  const migration = country.historyMigration;
+  const migrationAt = migration
+    ? snapshots.find((snapshot) => snapshot.rows.some((row) => row.p === migration.marker))?.t
+    : null;
+
+  // Preserve the real collection timestamp. Providers in one scrape share the
+  // same timestamp, while rate changes between heartbeats appear immediately.
   const buckets = new Map();
   for (const snap of snapshots) {
-    const t = Math.floor(Number(snap.t) / bucketMs) * bucketMs;
+    const t = Number(snap.t);
     for (const row of snap.rows) {
       if (row.m !== method || !finite(row.total)) continue;
-      buckets.set(`${row.p}:${t}`, { t, v: Number(row.total), rate: Number(row.rate) });
+      const legacy = migrationAt != null && t < Number(migrationAt);
+      const provider = legacy ? (migration.aliases?.[row.p] || row.p) : row.p;
+      const delta = legacy ? Number(migration.totalDeltaBefore?.[row.p] || 0) : 0;
+      buckets.set(`${provider}:${t}`, { t, v: Number(row.total) + delta, rate: Number(row.rate) });
     }
   }
 

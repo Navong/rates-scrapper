@@ -119,9 +119,6 @@ async function doScrape(country, fresh) {
   const code = country.code;
   const { records, errors } = await collectCountry(country, { fresh });
   const now = Date.now();
-  await recordRateSnapshot(country, records, now).catch((e) =>
-    console.error(`history write ${code} failed:`, e.message)
-  );
   for (const r of records) r._at = now;
 
   // Last-known-good: carry a recent value forward when a provider misses this
@@ -144,6 +141,14 @@ async function doScrape(country, fresh) {
     }
   }
   const finalErrors = covered ? errors.filter((e) => !covered.has(e.who)) : errors;
+
+  // Record after bounded carry-forward. A provider that misses the exact
+  // 30-minute sampling scrape can then reuse its recent verified value instead
+  // of leaving an artificial hole in the graph. Longer outages still produce
+  // gaps because carry-forward is capped by MAX_STALE.
+  await recordRateSnapshot(country, records, now).catch((e) =>
+    console.error(`history write ${code} failed:`, e.message)
+  );
 
   const entry = { at: now, records, errors: finalErrors };
   S.rankCache.set(code, entry);

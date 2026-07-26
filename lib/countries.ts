@@ -89,6 +89,14 @@ export const COUNTRIES = {
     currency: "IDR",
     receiveAmount: 13000000,
     anchor: "GME_BNI",
+    // v1.1.11 renamed the generic GME bank series and corrected two business
+    // fees. Normalize older snapshots at read time so the graph has one
+    // continuous, comparable history instead of a deployment-time step.
+    historyMigration: {
+      marker: "GME_BNI",
+      aliases: { GME: "GME_BNI" },
+      totalDeltaBefore: { CROSS: -5000, JRF: 500 },
+    },
     methods: [{ key: "BANK", label: "Bank Deposit" }],
     // Fees seeded from each provider's own API. Adjust here if the business
     // fee table differs — this column is authoritative for the sheet.

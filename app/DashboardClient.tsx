@@ -4,9 +4,12 @@
 // switching corridor/method or refreshing never reloads the page.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
 import CountryViewPicker from "./CountryViewPicker";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 const fmt = (n) => "₩" + Math.round(n).toLocaleString("en-US");
 const n0 = (v) => Math.round(v).toLocaleString("en-US");
@@ -39,52 +42,100 @@ function computeStats(d, method) {
   };
 }
 
-// Diverging bar chart: axis = the anchor (GME). Left = cheaper, right = pricier.
+// Shadcn/Recharts diverging bar chart: axis = the anchor (GME).
 function Chart({ d, method, chip }) {
   const rows = (d.blocks[method] || []).filter((r) => !r.noRate && r.total != null).slice().sort((a, b) => b.total - a.total);
   if (!rows.length) return null;
 
   const anchorKey = anchorOf(d.anchor, method);
   const anchor = anchorKey ? rows.find((r) => r.provider === anchorKey) : null;
-  const W = 520, padL = 96, padR = 14, top = 26, rowH = 28, barH = 13;
-  const plotW = W - padL - padR;
-  const cx = padL + plotW / 2;
-  const halfW = plotW / 2 - 58;
-  const H = top + rows.length * rowH + 6;
   const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.gap ?? 0)));
+  const domain = Math.ceil(maxAbs * 1.28);
+  const chartData = rows.map((r) => ({
+    provider: r.provider,
+    label: r.op + (r.manual ? "*" : ""),
+    gap: anchorKey === r.provider ? 0 : (r.gap ?? 0),
+    total: r.total,
+    fee: r.fee,
+    color: chipFor(chip, r.provider),
+    anchor: anchorKey === r.provider,
+  }));
+  const config = {
+    gap: { label: "Price gap", color: "var(--good)" },
+  };
+
+  const ProviderTick = ({ x, y, payload }) => {
+    const item = chartData.find((row) => row.provider === payload.value);
+    if (!item) return null;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <circle cx={-88} cy={0} r={4} fill={item.color} />
+        <text x={-76} y={4} fill={item.anchor ? "var(--brand)" : "var(--text)"} fontSize={11.5} fontWeight={item.anchor ? 750 : 600}>
+          {item.label}
+        </text>
+      </g>
+    );
+  };
+
+  const GapBar = ({ x, y, width, height, payload }) => {
+    const item = payload;
+    if (!item) return null;
+    const positive = item.gap > 0;
+    const rectX = width < 0 ? x + width : x;
+    const rectWidth = Math.abs(width);
+    const label = item.anchor ? "anchor" : `${positive ? "+" : "−"}${n0(Math.abs(item.gap))}`;
+    return (
+      <g>
+        {!item.anchor && item.gap !== 0 ? (
+          <rect x={rectX} y={y} width={rectWidth} height={height} rx={4} fill={positive ? "var(--bad)" : "var(--good)"} fillOpacity={0.9} />
+        ) : null}
+        <text
+          x={item.anchor ? x + 8 : positive ? rectX + rectWidth + 7 : rectX - 7}
+          y={y + height / 2 + 4}
+          textAnchor={item.anchor || positive ? "start" : "end"}
+          fill={item.anchor ? "var(--muted)" : positive ? "var(--bad)" : "var(--good)"}
+          fontSize={11}
+          fontWeight={700}
+        >
+          {label}
+        </text>
+      </g>
+    );
+  };
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img"
-      aria-label={`Price gap versus ${anchor ? anchor.op : "cheapest"} for each competitor`}>
-      <text className="cap" x={cx - 10} y={12} textAnchor="end">← cheaper</text>
-      <text className="cap" x={cx + 10} y={12} textAnchor="start">more expensive →</text>
-      <line className="axdash" x1={cx - halfW} y1={top - 4} x2={cx - halfW} y2={H - 4} />
-      <line className="axdash" x1={cx + halfW} y1={top - 4} x2={cx + halfW} y2={H - 4} />
-      <line className="ax" x1={cx} y1={top - 6} x2={cx} y2={H - 4} />
-      {rows.map((r, i) => {
-        const isA = anchorKey === r.provider;
-        const gap = r.gap ?? 0;
-        const w = isA ? 0 : (Math.abs(gap) / maxAbs) * halfW;
-        const y = top + i * rowH;
-        const by = y + (rowH - barH) / 2 - 2;
-        const cls = gap > 0 ? "bar-up" : "bar-down";
-        const vTxt = isA ? "anchor" : (gap > 0 ? "+" : "−") + n0(Math.abs(gap));
-        const vCls = isA ? "val-zero" : gap > 0 ? "val-up" : "val-down";
-        const vX = isA ? cx + 8 : gap > 0 ? cx + w + 6 : cx - w - 6;
-        const vAnchor = isA ? "start" : gap > 0 ? "start" : "end";
-        return (
-          <g className="g" key={r.provider}>
-            <title>{r.op} — total {n0(r.total)} KRW · fee {n0(r.fee)}</title>
-            <circle cx={7} cy={by + barH / 2} r={4} fill={chipFor(chip, r.provider)} />
-            <text className={`lbl ${isA ? "anchor" : ""}`} x={18} y={by + barH / 2 + 4}>{r.op + (r.manual ? "*" : "")}</text>
-            {!isA && gap !== 0 && (gap > 0
-              ? <rect className={cls} x={cx} y={by} width={w} height={barH} rx={3} />
-              : <rect className={cls} x={cx - w} y={by} width={w} height={barH} rx={3} />)}
-            <text className={`val ${vCls}`} x={vX} y={by + barH / 2 + 4} textAnchor={vAnchor}>{vTxt}</text>
-          </g>
-        );
-      })}
-    </svg>
+    <div className="relative">
+      <div className="pointer-events-none absolute inset-x-[112px] top-0 z-10 flex justify-center gap-5 text-[10.5px] text-muted">
+        <span>← cheaper</span><span>more expensive →</span>
+      </div>
+      <ChartContainer config={config} className="h-auto min-h-[220px] w-full" style={{ height: Math.max(220, chartData.length * 34 + 48) }}>
+        <BarChart accessibilityLayer data={chartData} layout="vertical" margin={{ top: 24, right: 58, left: 14, bottom: 4 }}>
+          <CartesianGrid horizontal={false} />
+          <YAxis dataKey="provider" type="category" tickLine={false} axisLine={false} width={104} tick={<ProviderTick />} />
+          <XAxis type="number" domain={[-domain, domain]} hide />
+          <ReferenceLine x={0} stroke="var(--muted)" strokeOpacity={0.5} />
+          <ChartTooltip
+            cursor={false}
+            content={
+              <ChartTooltipContent
+                indicator="line"
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.label}
+                formatter={(value, _name, item) => (
+                  <>
+                    <span className="flex-1 text-muted">{item.payload?.anchor ? "GME anchor" : "Price gap"}</span>
+                    <b className="tabular-nums">
+                      {item.payload?.anchor ? "Anchor" : `${Number(value) > 0 ? "+" : "−"}${fmt(Math.abs(Number(value)))}`}
+                    </b>
+                    <span className="col-span-2 text-[11px] text-muted">Total {fmt(item.payload?.total)} · fee {fmt(item.payload?.fee)}</span>
+                  </>
+                )}
+              />
+            }
+          />
+          <Bar dataKey="gap" shape={<GapBar />} />
+        </BarChart>
+      </ChartContainer>
+    </div>
   );
 }
 
@@ -318,15 +369,22 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
           </div>
         </div>
 
-        <div className="panel">
-          <h3 id="chart-title">
-            {d && anchor ? `Price gap vs ${anchor.op}` : d ? "Total price spread" : "Price gap vs GME"}
-          </h3>
-          <div id="chart">
-            {!d ? <div className="skel" style={{ height: 220 }} /> : <Chart d={d} method={curMethod} chip={chip} />}
-          </div>
-          <div className="note" id="manual-note">{d ? <ManualNote d={d} /> : null}</div>
-        </div>
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b border-line">
+            <CardTitle id="chart-title">
+              {d && anchor ? `Price gap vs ${anchor.op}` : d ? "Total price spread" : "Price gap vs GME"}
+            </CardTitle>
+            <CardDescription>Compared with the GME anchor · lower is cheaper</CardDescription>
+          </CardHeader>
+          <CardContent className="px-4 pt-5">
+            <div id="chart">
+              {!d ? <div className="skel" style={{ height: 220 }} /> : <Chart d={d} method={curMethod} chip={chip} />}
+            </div>
+          </CardContent>
+          <CardFooter className="border-t border-line px-6 py-4">
+            <div className="note m-0" id="manual-note">{d ? <ManualNote d={d} /> : null}</div>
+          </CardFooter>
+        </Card>
       </div>
 
       <SiteFooter note={<span id="auto">Auto-refresh 4m</span>} />

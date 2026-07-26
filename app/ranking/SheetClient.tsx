@@ -5,6 +5,8 @@
 // on a corridor switch. Server-seeded (initialData) for an instant first paint.
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Check, Copy, LoaderCircle, RefreshCw, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
 import ManualEditor from "./ManualEditor";
@@ -27,11 +29,11 @@ const stampNow = () => {
   const d = new Date();
   return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}` };
 };
-// 12-hour clock like "04:32 PM" for the copied-image caption.
+// 12-hour clock like "4:32 PM" for the copied-image caption.
 const time12 = (d = new Date()) => {
   const ap = d.getHours() >= 12 ? "PM" : "AM";
   const h = d.getHours() % 12 || 12;
-  return `${pad2(h)}:${pad2(d.getMinutes())} ${ap}`;
+  return `${h}:${pad2(d.getMinutes())} ${ap}`;
 };
 
 const SHEET_COLS = [92, 112, 130, 92, 108, 108, 138, 100];
@@ -104,9 +106,9 @@ async function copySheetAsPng(d, dateStr, timeStr) {
     throw new Error("Image clipboard is not supported in this browser.");
   }
 
-  // Dynamic caption, e.g. "Cambodia Rate at 04:32 PM" — current corridor + time.
+  // Dynamic caption, e.g. "Philippines Rate Comparison as of 10:44 AM".
   // Kept SEPARATE from the image (not drawn into it).
-  const caption = `${d.name} Rate at ${time12()}`;
+  const caption = `${d.name} Rate Comparison as of ${time12()}`;
 
   const tableHeights = d.methods.map((m) => STAMP_H + ROW_H + (d.blocks[m.key] || []).length * ROW_H);
   const grid = !!d.grid;
@@ -141,14 +143,14 @@ async function copySheetAsPng(d, dateStr, timeStr) {
 
   const png = await new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Could not create PNG.")), "image/png"));
 
-  // Clipboard with THREE parts so the caption and image stay separate:
-  //   text/html  — a caption line above the <img>; rich targets (Teams, Kakao,
-  //                email, docs) render this → selectable text + a real image.
+  // Clipboard with THREE parts so the image and caption stay separate:
+  //   text/html  — image first, followed by a new line and caption; rich targets (Teams,
+  //                Kakao, email, docs) preserve that order and formatting.
   //   image/png  — pure-image targets paste just the picture.
   //   text/plain — plain-text fields fall back to the caption text.
   const dataUrl = await new Promise((res) => { const r = new FileReader(); r.onloadend = () => res(r.result); r.readAsDataURL(png); });
   const safe = caption.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const html = `<div style="font:15px Arial,sans-serif;margin:0 0 6px">${safe}</div><img src="${dataUrl}" alt="${safe}">`;
+  const html = `<img src="${dataUrl}" alt="${safe}"><br><span style="font:15px Arial,sans-serif">${safe}</span>`;
   await navigator.clipboard.write([new ClipboardItem({
     "text/html": new Blob([html], { type: "text/html" }),
     "image/png": png,
@@ -339,10 +341,14 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
   }, [copyState, d, dateStr, timeStr]);
 
   const copyButton = (
-    <button className="btn copy-img-btn" type="button" disabled={!d || copyState === "copying"} onClick={copySheet} title="Copy sheet as image">
-      <span className="copy-ico">▣</span>
+    <Button variant="secondary" type="button" disabled={!d || copyState === "copying"} onClick={copySheet} title="Copy sheet as image">
+      {copyState === "copying"
+        ? <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        : copyState === "copied"
+          ? <Check data-icon="inline-start" />
+          : <Copy data-icon="inline-start" />}
       <span>{copyState === "copying" ? "Copying..." : copyState === "copied" ? "Copied" : copyState === "failed" ? "Failed" : "Copy image"}</span>
-    </button>
+    </Button>
   );
 
   // Post the caption + sheet image to the team's Teams channel (server → webhook).
@@ -363,28 +369,28 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
   }, [sendState, d, country]);
 
   const sendButton = teamsEnabled ? (
-    <button className="btn send-teams-btn" type="button" disabled={!d || sendState === "sending"} onClick={sendTeams} title="Send caption + image to Teams">
-      <span className="copy-ico">📨</span>
+    <Button variant="outline" type="button" disabled={!d || sendState === "sending"} onClick={sendTeams} title="Send caption + image to Teams">
+      {sendState === "sending"
+        ? <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        : <Send data-icon="inline-start" />}
       <span>{sendState === "sending" ? "Sending..." : sendState === "sent" ? "Sent ✓" : sendState === "failed" ? "Failed" : "Send to Teams"}</span>
-    </button>
+    </Button>
   ) : null;
 
   // Re-scrape the current corridor now. Same look/behaviour as the dashboard and
   // stats Refresh, so the three pages stay consistent.
   const refreshButton = (
-    <button
-      className={"btn" + (loading ? " spin" : "")}
+    <Button
+      variant="default"
       type="button"
       id="refresh"
       title="Re-scrape this corridor now"
       disabled={loading}
       onClick={() => load(country, true)}
     >
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-        <path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" />
-      </svg>
+      <RefreshCw data-icon="inline-start" className={loading ? "animate-spin" : ""} />
       <span>Refresh</span>
-    </button>
+    </Button>
   );
 
   const headerActions = <>{refreshButton}{copyButton}{sendButton}</>;

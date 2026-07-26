@@ -96,10 +96,10 @@ export function AppHeader({ title, sub = null, active = "", country = "", extra 
               {sub ? <div className="sub">{sub}</div> : null}
             </div>
           </div>
-          <div className="appstatus">
+          <div className="appstatus" role="group" aria-label="Report actions and status">
             {extra}
-            <span className="rpill">Report Date <b>{reportDate}</b></span>
-            <span className="rpill live"><span className="dotlive" />{live}</span>
+            <span className="report-chip"><span>Report date</span><b>{reportDate}</b></span>
+            <span className="live-chip"><span className="dotlive" />{live}</span>
           </div>
         </div>
       </header>
