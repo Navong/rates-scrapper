@@ -54,10 +54,9 @@ export const COUNTRIES = {
       JRF:     { type: { BANK: "Bank Transfer" }, fee: { BANK: 5000 } },
       // No public rate API → entered manually on the sheet.
       SENTBE:  { manual: true, fee: { BANK: 5000 } },
-      // crossenf.com quote API. Quotes the website price, which includes Cross's
-      // advertised first-transfer bonus (+100,000 VND). Set `includeBonus: false`
-      // to publish the standard rate instead (see fetchCross in providers.mjs).
-      CROSS:   { platform: 144, rateUnit: 100, fee: { BANK: 5000 } },
+      // Cross is entered manually because its public quote can include changing
+      // promotional bonuses and is not a stable business comparison rate.
+      CROSS:   { manual: true, fee: { BANK: 5000 } },
     },
   },
 
