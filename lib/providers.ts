@@ -380,8 +380,9 @@ export async function collectCountry(country, opts = {}) {
     // GME corridors flagged `gmeSingleRate` quote one rate for every payout
     // method → fetch once (first method) and mirror below. This is the main
     // lever that keeps GME under its burst limit for 3-method corridors (PH).
-    if (api === "GME" && country.gmeSingleRate) {
-      const mkey = country.methods[0].key;
+    if (api === "GME" && (country.gmeSingleRate || cfg.singleRate)) {
+      const mkey = country.methods.find((m) => providerInMethod(cfg, m.key))?.key;
+      if (!mkey) continue;
       const who = `${prov}/${mkey}`;
       jobs.push({ who, p: withTimeout(fn(country, mkey, opts, prov), who) });
       continue;
@@ -411,8 +412,17 @@ export async function collectCountry(country, opts = {}) {
   const expanded = records.flatMap((r) => {
     const cfg = country.providers[r.provider];
     const api = cfg?.api || r.provider;
-    if (SINGLE_RATE[api] || (api === "GME" && country.gmeSingleRate)) {
-      return country.methods.filter((m) => providerInMethod(cfg, m.key)).map((m) => ({ ...r, method: m.key }));
+    if (SINGLE_RATE[api] || (api === "GME" && (country.gmeSingleRate || cfg?.singleRate))) {
+      return country.methods.filter((m) => providerInMethod(cfg, m.key)).map((m) => {
+        // A shared GME rate can span services with different receive amounts
+        // (Myanmar Cash 5M vs Wallet 4M). Scale the KRW principal accordingly.
+        if (api === "GME" && m.key !== r.method) {
+          const ratio = amountFor(country, m.key) / amountFor(country, r.method);
+          const principalKRW = Math.round(r.principalKRW * ratio);
+          return { ...r, method: m.key, principalKRW, sendTotalKRW: principalKRW + r.feeKRW };
+        }
+        return { ...r, method: m.key };
+      });
     }
     return [r];
   });

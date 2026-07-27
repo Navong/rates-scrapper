@@ -390,12 +390,12 @@ export const COUNTRIES = {
     flag: "🇲🇲",
     currency: "MMK",
     receiveAmount: 5000000, // default; each method overrides below
-    grid: true,             // 3 services → lay them out like Philippines
-    hidden: true,           // hidden from the UI/warmer; remove to re-enable
+    grid: true,
+    gridVertical: true,     // match the Philippines vertical three-table sheet
     // Providers are split by partner "channel", each scoped to one method. Where a
     // public API can select the channel it's scraped (params verified live against
-    // the sheet); GME's partners aren't API-selectable so they stay manual, as
-    // does Gmoney's wallet. The Price-gap anchor is a specific GME channel/method.
+    // the sheet); GME's partners aren't API-selectable so only those rows stay
+    // manual. The Price-gap anchor is a specific GME channel/method.
     anchor: { CASH: "GME_RIA", BANK: "GME_CB", WALLET: "GME_KBZPAY" },
     methods: [
       { key: "CASH", label: "Cash Payment", receiveAmount: 5000000 },
@@ -404,22 +404,31 @@ export const COUNTRIES = {
     ],
     providers: {
       // --- Cash Payment ---
+      GME_API_CASH_WALLET: { api: "GME", label: "GME (API)", countryName: "Myanmar",
+                       deliveryMethod: { CASH: "1", WALLET: "13" }, singleRate: true,
+                       methods: ["CASH", "WALLET"], fee: { CASH: 5000, WALLET: 5000 } },
+      GME_API_BANK:  { api: "GME", label: "GME (API)", countryName: "Myanmar",
+                       deliveryMethod: { BANK: "2" }, methods: ["BANK"], fee: { BANK: 8000 } },
       GME_WU:        { manual: true, label: "GME (WU)",  methods: ["CASH"], fee: { CASH: 0 } },
       GME_RIA:       { manual: true, label: "GME (Ria)", methods: ["CASH"], fee: { CASH: 0 } },
-      GMONEY_WU:     { api: "GMONEY", label: "Gmoney (WU)", country: "Myanmar", payment: { CASH: "Bank Account" }, methods: ["CASH"], fee: { CASH: 5000 } },
+      GMONEY_CASH:   { api: "GMONEY", label: "Gmoney (Cash Pickup)", country: "Myanmar", payment: { CASH: "Cash Pickup" }, methods: ["CASH"], fee: { CASH: 5000 } },
       HANPASS_WU:    { api: "HANPASS", label: "Hanpass (WU)", countryCode: "MM", option: { CASH: "CASH_PICK_UP" }, methods: ["CASH"], fee: { CASH: 5000 } },
       // --- Bank Deposit ---
       GME_AYA:       { manual: true, label: "GME (AYA)", methods: ["BANK"], fee: { BANK: 0 } },
       GME_KBZ:       { manual: true, label: "GME (KBZ)", methods: ["BANK"], fee: { BANK: 0 } },
       GME_CB:        { manual: true, label: "GME (CB)",  methods: ["BANK"], fee: { BANK: 0 } },
       E9PAY_CB:      { api: "E9PAY", label: "E9pay (CB)", nation: { BANK: "MM01" }, methods: ["BANK"], fee: { BANK: 8000 } },
+      E9PAY_KBZ:     { api: "E9PAY", label: "E9pay (KBZ)", nation: { BANK: "MM05" }, methods: ["BANK"], fee: { BANK: 8000 } },
       GMONEY_CB:     { api: "GMONEY", label: "Gmoney (CB)", country: "Myanmar", payment: { BANK: "Bank Account" }, methods: ["BANK"], fee: { BANK: 5000 } },
       SBI:           { api: "SBI", label: "SBI Cosmoney", countryId: "MYANMAR", methods: ["BANK"], fee: { BANK: 5000 } },
       HANPASS_CB:    { api: "HANPASS", label: "HANPASS (CB)", countryCode: "MM", option: { BANK: "BANK_TRANSFER" }, methods: ["BANK"], fee: { BANK: 5000 } },
       // --- Mobile Wallet ---
       GME_WAVE:      { manual: true, label: "GME (Wave Pay)", methods: ["WALLET"], fee: { WALLET: 0 } },
       GME_KBZPAY:    { manual: true, label: "GME (KBZ Pay)",  methods: ["WALLET"], fee: { WALLET: 0 } },
-      GMONEY_WAVE:   { manual: true, label: "Gmoney (Wave Pay)", methods: ["WALLET"], fee: { WALLET: 5000 } },
+      GMONEY_WAVE:   { api: "GMONEY", label: "Gmoney (Wave Pay)", country: "Myanmar", payment: { WALLET: "WaveMoney" }, methods: ["WALLET"], fee: { WALLET: 3500 } },
+      GMONEY_KBZPAY: { api: "GMONEY", label: "Gmoney (KBZ Pay)", country: "Myanmar", payment: { WALLET: "KBZPay" }, methods: ["WALLET"], fee: { WALLET: 3500 } },
+      GMONEY_AYAPAY: { api: "GMONEY", label: "Gmoney (AYA Pay)", country: "Myanmar", payment: { WALLET: "AYA PAY" }, methods: ["WALLET"], fee: { WALLET: 3500 } },
+      E9PAY_WAVE:    { api: "E9PAY", label: "E9pay (Wave Pay)", nation: { WALLET: "MM06" }, methods: ["WALLET"], fee: { WALLET: 3000 } },
       E9PAY_KBZPAY:  { api: "E9PAY", label: "E9 Pay (KBZ Pay)", nation: { WALLET: "MM04" }, methods: ["WALLET"], fee: { WALLET: 5000 } },
       HANPASS_WAVE:  { api: "HANPASS", label: "Hanpass (Wave Pay)", countryCode: "MM", option: { WALLET: "WAVE_PAY" }, methods: ["WALLET"], fee: { WALLET: 5000 } },
       HANPASS_KBZPAY:{ api: "HANPASS", label: "Hanpass (KBZ Pay)", countryCode: "MM", option: { WALLET: "MOBILE_WALLET" }, methods: ["WALLET"], fee: { WALLET: 5000 } },
