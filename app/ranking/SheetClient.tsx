@@ -41,6 +41,7 @@ const SHEET_W = SHEET_COLS.reduce((a, b) => a + b, 0);
 const ROW_H = 30;
 const STAMP_H = 28;
 const TABLE_GAP = 22;
+const VERTICAL_GRID_GAP = 12;
 const PANEL_PAD = 18;
 
 function drawCell(ctx, x, y, w, h, text, { bg = "#fff", bold = false, align = "center", color = "#000", border = "#c9ced6" } = {}) {
@@ -58,11 +59,13 @@ function drawCell(ctx, x, y, w, h, text, { bg = "#fff", bold = false, align = "c
   ctx.fillText(String(text), tx, y + h / 2, w - 12);
 }
 
-function drawServiceTable(ctx, d, service, rows, x, y, dateStr, timeStr) {
+function drawServiceTable(ctx, d, service, rows, x, y, dateStr, timeStr, showStamp = true) {
   const xs = SHEET_COLS.reduce((out, w) => [...out, out[out.length - 1] + w], [x]);
-  drawCell(ctx, xs[6], y, SHEET_COLS[6], STAMP_H, `Date : ${dateStr}`, { align: "left", bold: true });
-  drawCell(ctx, xs[7], y, SHEET_COLS[7], STAMP_H, timeStr, { align: "right", bold: true });
-  y += STAMP_H;
+  if (showStamp) {
+    drawCell(ctx, xs[6], y, SHEET_COLS[6], STAMP_H, `Date : ${dateStr}`, { align: "left", bold: true });
+    drawCell(ctx, xs[7], y, SHEET_COLS[7], STAMP_H, timeStr, { align: "right", bold: true });
+    y += STAMP_H;
+  }
 
   ["Country", "Service", "Competitor", `FCY(${service.currency ?? d.currency})`, "KRW ①", "Service fee ②", "Total price ①+②", "Price gap"]
     .forEach((h, i) => drawCell(ctx, xs[i], y, SHEET_COLS[i], ROW_H, h, { bg: "#f2f4f6", bold: true }));
@@ -110,12 +113,15 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   // Kept SEPARATE from the image (not drawn into it).
   const caption = `${d.name} Rate Comparison as of ${time12()}`;
 
-  const tableHeights = d.methods.map((m) => STAMP_H + ROW_H + (d.blocks[m.key] || []).length * ROW_H);
   const grid = !!d.grid;
-  const width = PANEL_PAD * 2 + (grid ? SHEET_W * 2 + 14 : SHEET_W);
-  const height = PANEL_PAD * 2 + (grid
+  const verticalGrid = grid && !!d.gridVertical;
+  const tableHeights = d.methods.map((m, i) =>
+    (verticalGrid && i > 0 ? 0 : STAMP_H) + ROW_H + (d.blocks[m.key] || []).length * ROW_H
+  );
+  const width = PANEL_PAD * 2 + (grid && !verticalGrid ? SHEET_W * 2 + 14 : SHEET_W);
+  const height = PANEL_PAD * 2 + (grid && !verticalGrid
     ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 + (tableHeights[2] || 0)
-    : tableHeights.reduce((sum, h, i) => sum + h + (i ? TABLE_GAP : 0), 0));
+    : tableHeights.reduce((sum, h, i) => sum + h + (i ? (verticalGrid ? VERTICAL_GRID_GAP : TABLE_GAP) : 0), 0));
 
   const scale = Math.min(2, window.devicePixelRatio || 1);
   const canvas = document.createElement("canvas");
@@ -126,7 +132,7 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, width, height);
 
-  if (grid) {
+  if (grid && !verticalGrid) {
     d.methods.forEach((m, i) => {
       const x = PANEL_PAD + (i === 1 ? SHEET_W + 14 : i === 2 ? (SHEET_W + 14) / 2 : 0);
       const y = PANEL_PAD + (i === 2 ? Math.max(tableHeights[0] || 0, tableHeights[1] || 0) + 14 : 0);
@@ -135,8 +141,8 @@ async function copySheetAsPng(d, dateStr, timeStr) {
   } else {
     let y = PANEL_PAD;
     d.methods.forEach((m, i) => {
-      if (i) y += TABLE_GAP;
-      drawServiceTable(ctx, d, m, d.blocks[m.key] || [], PANEL_PAD, y, dateStr, timeStr);
+      if (i) y += verticalGrid ? VERTICAL_GRID_GAP : TABLE_GAP;
+      drawServiceTable(ctx, d, m, d.blocks[m.key] || [], PANEL_PAD, y, dateStr, timeStr, !verticalGrid || i === 0);
       y += tableHeights[i];
     });
   }
@@ -184,17 +190,19 @@ function computeStats(d) {
   };
 }
 
-function ServiceTable({ d, service, rows, dateStr, timeStr }) {
+function ServiceTable({ d, service, rows, dateStr, timeStr, showStamp = true }) {
   const anchorKey = anchorOf(d.anchor, service.key);
   const amt = service.receiveAmount ?? d.receiveAmount;
   return (
     <table>
       <tbody>
-        <tr>
-          <td className="none" colSpan={6} />
-          <td className="dt">Date : {dateStr}</td>
-          <td className="dt num">{timeStr}</td>
-        </tr>
+        {showStamp ? (
+          <tr>
+            <td className="none" colSpan={6} />
+            <td className="dt">Date : {dateStr}</td>
+            <td className="dt num">{timeStr}</td>
+          </tr>
+        ) : null}
         <tr>
           <th>Country</th><th>Service</th><th>Competitor</th>
           <th>FCY({service.currency ?? d.currency})</th><th>KRW ①</th><th>Service fee ②</th>
@@ -238,24 +246,36 @@ function ServiceTable({ d, service, rows, dateStr, timeStr }) {
   );
 }
 
-function SheetSkeleton() {
+function SkeletonTable({ showStamp = true }) {
+  const rows = showStamp ? 8 : 7;
+  const headerRow = showStamp ? 1 : 0;
+  return (
+    <table className="sksheet">
+      <tbody>
+        {Array.from({ length: rows }).map((_, row) => (
+          <tr key={row}>
+            {Array.from({ length: 8 }).map((__, col) => (
+              <td key={col} className={row === headerRow ? "skhead" : ""}>
+                <span className="skcell" />
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function SheetSkeleton({ verticalGrid = false, tableCount = 1 }) {
   return (
     <>
       <div className="panel sheetpanel">
         <div className="sheetscroll" aria-hidden="true">
-          <table className="sksheet">
-            <tbody>
-              {Array.from({ length: 8 }).map((_, row) => (
-                <tr key={row}>
-                  {Array.from({ length: 8 }).map((__, col) => (
-                    <td key={col} className={row === 1 ? "skhead" : ""}>
-                      <span className="skcell" />
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {verticalGrid ? (
+            <div className="sheets vertical">
+              {Array.from({ length: tableCount }).map((_, i) => <SkeletonTable key={i} showStamp={i === 0} />)}
+            </div>
+          ) : <SkeletonTable />}
         </div>
       </div>
       <div className="panel manualp" style={{ marginTop: 16 }} aria-hidden="true">
@@ -316,6 +336,9 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
   }, [country]);
 
   const d = data;
+  const selectedCountry = countries.find((c) => c.code === country);
+  const layoutGrid = d?.grid ?? selectedCountry?.grid;
+  const layoutVertical = d?.gridVertical ?? selectedCountry?.gridVertical;
   const dateStr = mounted ? stamp.date : reportDate;
   const timeStr = mounted ? stamp.time : "";
 
@@ -397,16 +420,17 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
 
   let tables = null;
   if (d) {
-    const rendered = d.methods.map((m) => (
-      <ServiceTable key={m.key} d={d} service={m} rows={d.blocks[m.key] || []} dateStr={dateStr} timeStr={timeStr} />
+    const rendered = d.methods.map((m, i) => (
+      <ServiceTable key={m.key} d={d} service={m} rows={d.blocks[m.key] || []} dateStr={dateStr} timeStr={timeStr}
+        showStamp={!d.gridVertical || i === 0} />
     ));
     tables = d.grid
-      ? <div className="sheets">{rendered}</div>
+      ? <div className={`sheets${d.gridVertical ? " vertical" : ""}`}>{rendered}</div>
       : rendered.map((t, i) => <div key={i}>{t}{i < rendered.length - 1 ? <div style={{ height: 22 }} /> : null}</div>);
   }
 
   return (
-    <main className={`wrap sheetpage${d?.grid ? " grid" : ""}`}>
+    <main className={`wrap sheetpage${layoutGrid ? " grid" : ""}${layoutVertical ? " grid-vertical" : ""}`}>
       <AppHeader
         title="Sheet view"
         sub={sub}
@@ -430,7 +454,7 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
       <div id="sheet-region">
         {err ? <div className="warn">Failed to load: {err}</div> : null}
         {!d ? (
-          <SheetSkeleton />
+          <SheetSkeleton verticalGrid={layoutVertical} tableCount={selectedCountry?.methods?.length || 1} />
         ) : (
           <>
             {d.failed?.length ? <div className="warn">⚠ Unavailable this run: {d.failed.map((f) => f.who).join(", ")}</div> : null}

@@ -404,6 +404,9 @@ label { font-weight: 600; display: block; margin-top: 16px; font-size: 14px; }
 .sheetpage .sheets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .sheetpage .sheets > table { width: 100%; table-layout: auto; }
 .sheetpage .sheets > table:last-child { grid-column: 1 / -1; width: calc(50% - 7px); justify-self: center; }
+.sheetpage .sheets.vertical { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.sheetpage .sheets.vertical > table:last-child { grid-column: auto; width: 100%; justify-self: stretch; }
+.sheetpage.grid-vertical .sheetpanel { width: min(920px, 100%); }
 .sheetpage .sheets th { white-space: normal; line-height: 1.2; font-weight: 600; }
 .sheetpage .sheets th, .sheetpage .sheets td { padding: 4px 7px; font-size: 12px; }
 @media (max-width: 1150px) {

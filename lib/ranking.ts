@@ -133,7 +133,8 @@ export function buildRankingData(country, records, manual) {
   return {
     country: country.code, name: country.name, flag: country.flag,
     currency: country.currency, receiveAmount: country.receiveAmount,
-    anchor: country.anchor, methods: country.methods, grid: !!country.grid,
+    anchor: country.anchor, methods: country.methods,
+    grid: !!country.grid, gridVertical: !!country.gridVertical,
     manualProviders, manualNeed, manualCards, manualNames, feeCards,
     blocks: buildRows(country, records, manual),
   };

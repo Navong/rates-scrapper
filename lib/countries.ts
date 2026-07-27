@@ -164,9 +164,9 @@ export const COUNTRIES = {
     currency: "PHP",
     receiveAmount: 40000,
     anchor: "GME",
-    // 3 services stacked would scroll forever. Lay them out two across with the
-    // third centred below; the tables themselves stay the standard size.
+    // Keep the three service tables in one vertical column in sheet view.
     grid: true,
+    gridVertical: true,
     // GME quotes the SAME exchange rate for all three PH payout methods (verified
     // against the live API). Fetch it once and mirror, instead of 3 calls — that
     // is what keeps us under GME's ~4-rapid-call burst limit (errorCode 429).
@@ -181,8 +181,13 @@ export const COUNTRIES = {
     providers: {
       GME:      { countryName: "Philippines", deliveryMethod: { CASH: "1", BANK: "2", WALLET: "13" },
                   fee: { CASH: 0, BANK: 0, WALLET: 0 } },
+      // GME's public quote distinguishes payout types but does not expose these
+      // partner-specific rates, so they remain separate manual sheet entries.
+      GME_CEBUANA:  { manual: true, label: "GME (Cebuana)", methods: ["CASH"], fee: { CASH: 0 } },
+      GME_WU:       { manual: true, label: "GME (WU)", methods: ["CASH"], fee: { CASH: 0 } },
+      GME_METROBANK:{ manual: true, label: "GME (Metrobank)", methods: ["BANK"], fee: { BANK: 0 } },
       E9PAY:    { nation: { CASH: "PH03", BANK: "PH11", WALLET: "PH15" },   // PH15 = Gcash
-                  fee: { CASH: 5000, BANK: 5000, WALLET: 5000 } },
+                  fee: { CASH: 5000, BANK: 5000, WALLET: 3000 } },
       HANPASS:  { countryCode: "PH", option: { CASH: "CASH_PICK_UP", BANK: "BANK_TRANSFER", WALLET: "MOBILE_WALLET" },
                   fee: { CASH: 5000, BANK: 5000, WALLET: 5000 } },
       GMONEY:   { country: "Philippines", payment: { CASH: "Cash Pickup", BANK: "Bank Account", WALLET: "Gcash" },
@@ -274,6 +279,7 @@ export const COUNTRIES = {
     receiveAmount: 1000,
     anchor: "GME",
     grid: true,
+    gridVertical: true,
     // GME returns the same USD quote for bank and cash. Fetch once and mirror
     // it across the three business channels to avoid unnecessary rate-limit use.
     gmeSingleRate: true,
@@ -458,5 +464,7 @@ export function countryList() {
     currency: c.currency,
     receiveAmount: c.receiveAmount,
     methods: c.methods,
+    grid: "grid" in c && !!c.grid,
+    gridVertical: "gridVertical" in c && !!c.gridVertical,
   }));
 }
