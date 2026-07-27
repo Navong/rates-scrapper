@@ -224,6 +224,38 @@ async function pandaCall(country, key = "PANDA") {
   return rec(key, "ALL", country.receiveAmount / rate, 0, 1 / rate, j.model);
 }
 
+// ---------- SENTBE (official public FX feed) ----------
+// SentBe's own support calculator loads this no-login global rate feed. Some
+// currencies have a country-specific quote (Cambodia USD => usd_krw_kh), so a
+// corridor can declare `rateKey`; otherwise the generic currency pair is used.
+const SENTBE_FX_TOKEN = process.env.SENTBE_FX_TOKEN
+  || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoidHJhbnNmZXIiLCJyb2xlIjoidHJhbnNmZXIiLCJzYWx0IjoiWVQjdDQiLCJleHAiOjQ2NjY0MjEwMTJ9.sivUSmZDNkYPL-PTgoN8HrZKjUVE8pE_L5MqqA6cvxk";
+
+export async function fetchSentbe(country, opts, key = "SENTBE") {
+  const rates = await limited("SENTBE", "global_rates", async () => {
+    const res = await fetch("https://fx.service.sentbe.com/v1/global_rates", {
+      headers: {
+        Authorization: `Bearer ${SENTBE_FX_TOKEN}`,
+        Accept: "application/json",
+        Referer: "https://support.sentbe.com/",
+        "User-Agent": UA,
+      },
+    });
+    if (!res.ok) throw new Error(`SENTBE HTTP ${res.status}`);
+    return res.json();
+  }, opts);
+
+  const cfg = country.providers[key];
+  const scopedMethod = cfg.methods?.length === 1 ? cfg.methods[0] : country.methods[0].key;
+  const currency = currencyFor(country, scopedMethod).toLowerCase();
+  const receiveAmount = amountFor(country, scopedMethod);
+  const pair = cfg.rateKey || `${currency}_krw_${country.code.toLowerCase()}`;
+  const fallback = `${currency}_krw`;
+  const rate = Number(rates[pair] ?? rates[fallback]);
+  if (!rate) throw new Error(`SENTBE: no ${pair} rate`);
+  return rec(key, "ALL", receiveAmount * rate, 0, rate, { pair, rate });
+}
+
 // ---------- JRF ----------
 export function fetchJrf(country, mkey, opts, key = "JRF") {
   return limited("JRF", K(country, key, mkey), () => jrfCall(country, mkey, key), opts);
@@ -298,7 +330,7 @@ async function crossCall(country, key = "CROSS") {
 const PER_METHOD = { GME: fetchGme, E9PAY: fetchE9pay, HANPASS: fetchHanpass, GMONEY: fetchGmoney, JRF: fetchJrf };
 // Providers with ONE rate for the whole corridor — fetched once, mirrored onto
 // every service so they appear in each table.
-const SINGLE_RATE = { SBI: fetchSbi, COINSHOT: fetchCoinshot, UTRANSFER: fetchUtransfer, PANDA: fetchPanda, CROSS: fetchCross };
+const SINGLE_RATE = { SBI: fetchSbi, COINSHOT: fetchCoinshot, UTRANSFER: fetchUtransfer, PANDA: fetchPanda, SENTBE: fetchSentbe, CROSS: fetchCross };
 
 /**
  * Apply the country's fixed fee table. When a country declares a fee for a

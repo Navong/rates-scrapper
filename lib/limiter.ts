@@ -31,6 +31,7 @@ const CONFIG = {
   SBI:       { gap: 900, ttl: PROVIDER_TTL }, // 2-step + anti-bot
   UTRANSFER: { gap: 400, ttl: PROVIDER_TTL },
   PANDA:     { gap: 400, ttl: PROVIDER_TTL },
+  SENTBE:    { gap: 400, ttl: PROVIDER_TTL },
 };
 const cfgFor = (p) => CONFIG[p] ?? DEFAULT;
 

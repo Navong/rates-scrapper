@@ -28,9 +28,8 @@ export const COUNTRIES = {
       HANPASS: { countryCode: "KH", option: { BANK: "BANK_TRANSFER", WALLET: "MOBILE_WALLET" }, fee: { BANK: 5000, WALLET: 5000 } },
       GMONEY:  { country: "Cambodia", payment: { BANK: "Bank Account", WALLET: "Wing Account" }, fee: { BANK: 2500, WALLET: 4000 } },
       SBI:     { countryId: "CAMBODIA", fee: { BANK: 5000, WALLET: 5000 } }, // single rate, no method split
-      // Sentbe quotes a different rate for Bank Deposit vs Cash Payment → both
-      // entered manually, each with its own fee (bank 2,500 · cash 5,000).
-      SENTBE:  { manual: true, fee: { BANK: 2500, WALLET: 5000 } },
+      // Official Cambodia USD web rate, shared across methods; fees differ.
+      SENTBE:  { rateKey: "usd_krw_kh", fee: { BANK: 2500, WALLET: 5000 } },
     },
   },
 
@@ -76,7 +75,7 @@ export const COUNTRIES = {
       GMONEY:   { country: "Nepal", payment: { BANK: "Bank Account" }, fee: { BANK: 0 } },
       COINSHOT: { fee: { BANK: 0 } },
       JRF:      { type: { BANK: "Bank Transfer" }, fee: { BANK: 3000 } },
-      SENTBE:   { manual: true, fee: { BANK: 2500 } },
+      SENTBE:   { fee: { BANK: 2500 } },
       FONEMONEY:{ manual: true, fee: { BANK: 0 } },
     },
   },
@@ -102,7 +101,7 @@ export const COUNTRIES = {
     providers: {
       GME_BNI:   { api: "GME", label: "GME (BNI)", countryName: "Indonesia", deliveryMethod: { BANK: "2" }, totalIncludesFee: true, fee: { BANK: 0 } },
       E9PAY:     { nation: { BANK: "ID01" }, fee: { BANK: 5000 } },
-      SENTBE:    { manual: true, fee: { BANK: 5000 } },
+      SENTBE:    { fee: { BANK: 5000 } },
       SBI:       { countryId: "INDONESIA", fee: { BANK: 5000 } },
       COINSHOT:  { fee: { BANK: 2500 } },
       GME_BRI:   { manual: true, label: "GME (BRI)", fee: { BANK: 0 } },
@@ -131,7 +130,7 @@ export const COUNTRIES = {
       GMONEY:  { country: "Sri Lanka", payment: { BANK: "Bank Account" }, fee: { BANK: 1500 } },
       COINSHOT:{ fee: { BANK: 0 } },
       JRF:     { type: { BANK: "Bank Transfer" }, fee: { BANK: 4500 } },
-      SENTBE:  { manual: true, fee: { BANK: 5000 } },
+      SENTBE:  { fee: { BANK: 5000 } },
       HANAEZ:  { manual: true, fee: { BANK: 5427 } }, // app-only — manual entry
     },
   },
@@ -193,7 +192,7 @@ export const COUNTRIES = {
       COINSHOT: { fee: { CASH: 0, BANK: 0, WALLET: 0 } },
       SBI:      { countryId: "PHILIPPINES", fee: { CASH: 5000, BANK: 5000, WALLET: 5000 } },
       UTRANSFER:{ fee: { CASH: 5000, BANK: 2500, WALLET: 1500 } },
-      SENTBE:   { manual: true, fee: { CASH: 5000, BANK: 5000, WALLET: 2500 } },
+      SENTBE:   { fee: { CASH: 5000, BANK: 5000, WALLET: 2500 } },
       CROSS:    { platform: 20, rateUnit: 1, fee: { CASH: 0, BANK: 0, WALLET: 0 } }, // crossenf.com — one rate, all methods
     },
   },
@@ -221,7 +220,7 @@ export const COUNTRIES = {
       DEBUNK:    { manual: true, fee: { ALIPAY: 5000 } },
       MOIN:      { manual: true, fee: { ALIPAY: 0 } },
       WIREBARLEY:{ manual: true, fee: { ALIPAY: 0 } },
-      SENTBE:    { manual: true, fee: { ALIPAY: 0 } },
+      SENTBE:    { fee: { ALIPAY: 0 } },
       CROSS:     { platform: 122, rateUnit: 1, fee: { ALIPAY: 0 } }, // crossenf.com — Alipay platform
     },
   },
@@ -263,7 +262,7 @@ export const COUNTRIES = {
       GMONEY:  { country: "South Africa", payment: { BANK: "Bank Account" }, fee: { BANK: 5000 } },
       GME:     { countryName: "South Africa", deliveryMethod: { BANK: "2" }, fee: { BANK: 5000 } },
       HANPASS: { countryCode: "ZA", option: { BANK: "BANK_TRANSFER" }, fee: { BANK: 5000 } },
-      SENTBE:  { manual: true, fee: { BANK: 5000 } },
+      SENTBE:  { fee: { BANK: 5000 } },
     },
   },
 
@@ -368,9 +367,13 @@ export const COUNTRIES = {
       COINSHOT: {
         manual: true, label: "Coinshot", methods: ["CASH"], fee: { CASH: 8000 },
       },
-      SENTBE: {
-        manual: true, label: "SentBe", methods: ["CASH", "CARD"],
-        fee: { CASH: 5000, CARD: 1000 },
+      SENTBE_CASH: {
+        api: "SENTBE", label: "SentBe", rateKey: "usd_krw_uz",
+        methods: ["CASH"], fee: { CASH: 5000 },
+      },
+      SENTBE_CARD: {
+        api: "SENTBE", label: "SentBe", rateKey: "uzs_krw",
+        methods: ["CARD"], fee: { CARD: 1000 },
       },
     },
   },
