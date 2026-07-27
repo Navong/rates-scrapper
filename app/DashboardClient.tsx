@@ -236,9 +236,11 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [country]);
 
-  // Poll ~4min, jittered ±20s so open tabs never sync into a burst.
+  // Poll the shared cache about once a minute. This is deliberately NOT a
+  // `fresh=1` request: the single background warmer owns upstream scraping, so
+  // more open browser tabs never multiply provider traffic or rate-limit risk.
   useEffect(() => {
-    const id = setInterval(() => load(country, false), 240000 + Math.floor((Math.random() * 40 - 20) * 1000));
+    const id = setInterval(() => load(country, false), 60000 + Math.floor((Math.random() * 20 - 10) * 1000));
     return () => clearInterval(id);
   }, [country, load]);
 
@@ -388,7 +390,7 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
         </Card>
       </div>
 
-      <SiteFooter note={<span id="auto">Auto-refresh 4m</span>} />
+      <SiteFooter note={<span id="auto">Auto-refresh 1m</span>} />
     </main>
   );
 }
