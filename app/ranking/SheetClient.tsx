@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Check, Copy, LoaderCircle, RefreshCw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
 import ManualEditor from "./ManualEditor";
@@ -301,10 +302,17 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
 
   // `fresh` forces a real re-scrape (bypasses the cache/memo) — same contract as
   // the dashboard's Refresh. The limiter still queues + spaces the upstream calls.
-  const load = useCallback(async (code, fresh = false) => {
+  const load = useCallback(async (code, fresh = false, notify = false) => {
     const requestId = ++requestRef.current;
     setErr("");
     setLoading(true);
+    const started = performance.now();
+    const toastId = notify ? toast.add({
+      type: "loading",
+      title: "Refreshing live rates",
+      description: "Contacting every provider. Slow providers can take up to 25 seconds.",
+      timeout: 0,
+    }) : null;
     try {
       const res = await fetch(`/api/ranking?country=${code}${fresh ? "&fresh=1" : ""}`, { headers: { Accept: "application/json" } });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -312,9 +320,28 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
       if (requestId !== requestRef.current) return;
       setData(nextData);
       setStamp(stampNow());
+      if (toastId) {
+        const seconds = ((performance.now() - started) / 1000).toFixed(1);
+        toast.update(toastId, {
+          type: nextData.failed?.length ? "warning" : "success",
+          title: nextData.failed?.length ? "Sheet refreshed with warnings" : "Sheet refreshed",
+          description: nextData.failed?.length
+            ? `${nextData.failed.length} provider${nextData.failed.length === 1 ? "" : "s"} unavailable · ${seconds}s`
+            : `Latest provider rates loaded in ${seconds}s.`,
+          timeout: 5000,
+        });
+      }
     } catch (e) {
       if (requestId !== requestRef.current) return;
       setErr(e.message);
+      if (toastId) {
+        toast.update(toastId, {
+          type: "error",
+          title: "Refresh failed",
+          description: e.message,
+          timeout: 6000,
+        });
+      }
     } finally {
       // Only the newest request may clear the spinner (a superseded one must not).
       if (requestId === requestRef.current) setLoading(false);
@@ -409,7 +436,7 @@ export default function SheetClient({ countries, reportDate, initialCountry, ini
       id="refresh"
       title="Re-scrape this corridor now"
       disabled={loading}
-      onClick={() => load(country, true)}
+      onClick={() => load(country, true, true)}
     >
       <RefreshCw data-icon="inline-start" className={loading ? "animate-spin" : ""} />
       <span>Refresh</span>

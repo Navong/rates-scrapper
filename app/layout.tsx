@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Toaster } from "@/components/ui/toast";
 
 export const metadata = {
   title: "Remittance rate comparison",
@@ -21,7 +22,10 @@ export default function RootLayout({ children }) {
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
