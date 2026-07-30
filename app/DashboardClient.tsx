@@ -10,6 +10,7 @@ import { anchorOf } from "@/lib/countries";
 import CountryViewPicker from "./CountryViewPicker";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { toast } from "@/components/ui/toast";
 
 const fmt = (n) => "₩" + Math.round(n).toLocaleString("en-US");
 const n0 = (v) => Math.round(v).toLocaleString("en-US");
@@ -198,11 +199,18 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
   const loadingRef = useRef(false);
   const didMount = useRef(false);
 
-  const load = useCallback(async (code, fresh) => {
+  const load = useCallback(async (code, fresh, notify = false) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
     setLoading(true);
     setErr("");
+    const started = performance.now();
+    const toastId = notify ? toast.add({
+      type: "loading",
+      title: "Refreshing live rates",
+      description: "Contacting every provider. Slow providers can take up to 25 seconds.",
+      timeout: 0,
+    }) : null;
     try {
       const url = `/api/ranking?country=${code}${fresh ? "&fresh=1" : ""}`;
       const res = await fetch(url, { headers: { Accept: "application/json" } });
@@ -210,8 +218,27 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
       const j = await res.json();
       setData(j);
       setAt(Date.now());
+      if (toastId) {
+        const seconds = ((performance.now() - started) / 1000).toFixed(1);
+        toast.update(toastId, {
+          type: j.failed?.length ? "warning" : "success",
+          title: j.failed?.length ? "Rates refreshed with warnings" : "Rates refreshed",
+          description: j.failed?.length
+            ? `${j.failed.length} provider${j.failed.length === 1 ? "" : "s"} unavailable · ${seconds}s`
+            : `Latest provider rates loaded in ${seconds}s.`,
+          timeout: 5000,
+        });
+      }
     } catch (e) {
       setErr(e.message);
+      if (toastId) {
+        toast.update(toastId, {
+          type: "error",
+          title: "Refresh failed",
+          description: e.message,
+          timeout: 6000,
+        });
+      }
     } finally {
       loadingRef.current = false;
       setLoading(false);
@@ -249,7 +276,7 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
   const curMethod = d ? (method && methods.some((m) => m.key === method) ? method : methods[0].key) : null;
 
   const refreshBtn = (
-    <button className={"btn" + (loading ? " spin" : "")} id="refresh" title="Refresh" onClick={() => load(country, true)}>
+    <button className={"btn" + (loading ? " spin" : "")} id="refresh" title="Refresh" onClick={() => load(country, true, true)}>
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
         <path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" />
       </svg>
