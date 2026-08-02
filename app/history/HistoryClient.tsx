@@ -42,11 +42,11 @@ const signed = (value) => {
 export function HistoryChartSkeleton() {
   return (
     <Card className="overflow-hidden" aria-busy="true" aria-label="Loading rate graph">
-      <CardHeader className="border-b border-line">
+      <CardHeader className="history-card-header border-b border-line">
         <div className="history-route-title sk" />
         <div className="history-route-subtitle sk" />
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className="history-card-content pt-6">
         <div className="history-skeleton-chart sk" />
       </CardContent>
     </Card>
@@ -88,7 +88,7 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
   const padding = Math.max(mode === "movement" ? 25 : 60, (maximum - minimum) * 0.08);
 
   return (
-    <ChartContainer config={config} className="h-[390px] w-full">
+    <ChartContainer config={config} className="h-[300px] w-full sm:h-[390px]">
       <AreaChart data={chartData} margin={{ top: 8, right: 10, left: 10, bottom: 4 }} accessibilityLayer>
         <defs>
           {chartProviders.map((provider) => {
@@ -279,7 +279,7 @@ export default function HistoryClient({
       {error ? <div className="warn">Failed to load history: {error}</div> : null}
       {!data || loading ? <HistoryChartSkeleton /> : (
         <Card className="overflow-hidden pt-0">
-          <CardHeader className="flex items-center gap-3 border-b border-line py-5 sm:flex-row">
+          <CardHeader className="history-card-header flex items-center gap-3 border-b border-line py-5 sm:flex-row">
             <div className="grid flex-1 gap-1">
               <CardTitle>{mode === "movement" ? "Rate movement" : "Total KRW trend"}</CardTitle>
               <CardDescription>
@@ -303,7 +303,7 @@ export default function HistoryClient({
               <button className="btn" onClick={() => load(country, method, range)} disabled={loading}>Refresh</button>
             </div>
           </CardHeader>
-          <CardContent className="px-2 pt-5 sm:px-6 sm:pt-6">
+          <CardContent className="history-card-content px-2 pt-5 sm:px-6 sm:pt-6">
             <InteractiveRateChart
               providers={data.providers || []}
               visible={visible}
