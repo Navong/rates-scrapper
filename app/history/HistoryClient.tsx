@@ -170,7 +170,7 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
 }
 
 export default function HistoryClient({
-  countries, initialCountry, initialMethod, initialRange = "7d",
+  countries, initialCountry, initialMethod, initialRange = "today",
   initialData, reportDate, admin = false,
 }) {
   const [country, setCountry] = useState(initialCountry);

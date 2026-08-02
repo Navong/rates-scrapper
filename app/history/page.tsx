@@ -13,7 +13,7 @@ export default async function HistoryPage({ searchParams }) {
   const method = country.methods.some((m) => m.key === sp.method)
     ? sp.method
     : country.methods[0].key;
-  const range = sp.range === "today" ? "today" : "7d";
+  const range = sp.range === "7d" ? "7d" : "today";
   const admin = roleFromValue((await cookies()).get("rt")?.value) === "admin";
 
   return (
