@@ -3,12 +3,10 @@ import { getCountryRecords } from "@/lib/cache";
 import { buildRankingData } from "@/lib/ranking";
 import { getStore } from "@/lib/manual";
 import { sheetPNG } from "@/lib/sheet-image";
-import { todayStr } from "@/lib/date";
+import { koreaTime24, todayStr } from "@/lib/date";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const pad2 = (n) => String(n).padStart(2, "0");
 
 // GET /api/sheet?country=KH  → the ranking sheet (all services) as a PNG.
 //
@@ -23,10 +21,10 @@ export async function GET(req) {
   const { records } = await getCountryRecords(country, false);
   const d = buildRankingData(country, records, getStore());
 
-  // Stamp in server TZ (Asia/Seoul), matching the sheet page.
+  // Explicit Korean time, independent of the host/container timezone.
   const now = new Date();
-  const dateStr = todayStr();
-  const timeStr = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const dateStr = todayStr(now);
+  const timeStr = koreaTime24(now);
 
   const png = await sheetPNG(d, dateStr, timeStr);
   const fname = `sheet-${code}-${dateStr}.png`;

@@ -3,6 +3,7 @@
 
 import { CREDIT, COPYRIGHT } from "./meta";
 import { COUNTRIES } from "./countries";
+import { todayStr } from "./date";
 
 // GME operations-dashboard language: a full-bleed red brand bar with the logo
 // and status pills, a stat-counter strip, underline tabs, and a red footer —
@@ -173,9 +174,7 @@ const NAV = [
 ];
 
 const today = () => {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  return todayStr();
 };
 
 /**

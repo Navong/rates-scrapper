@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
+import { koreaTime12, koreaTime24, todayStr } from "@/lib/date";
 import ManualEditor from "./ManualEditor";
 import FeeEditor from "./FeeEditor";
 import CountryViewPicker from "../CountryViewPicker";
@@ -25,17 +26,11 @@ const NEG_GAP_FILL = "#12B886";
 const fillFor = (p) => FILL[p] || FILL[String(p).split("_")[0]] || OTHER_FILL;
 
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
-const pad2 = (n) => String(n).padStart(2, "0");
 const stampNow = () => {
   const d = new Date();
-  return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}` };
+  return { date: todayStr(d), time: koreaTime24(d) };
 };
 // 12-hour clock like "4:32 PM" for the copied-image caption.
-const time12 = (d = new Date()) => {
-  const ap = d.getHours() >= 12 ? "PM" : "AM";
-  const h = d.getHours() % 12 || 12;
-  return `${h}:${pad2(d.getMinutes())} ${ap}`;
-};
 
 const SHEET_COLS = [92, 112, 130, 92, 108, 108, 138, 100];
 const SHEET_W = SHEET_COLS.reduce((a, b) => a + b, 0);
@@ -112,7 +107,7 @@ async function copySheetAsPng(d, dateStr, timeStr) {
 
   // Dynamic caption, e.g. "Philippines Rate Comparison as of 10:44 AM".
   // Kept SEPARATE from the image (not drawn into it).
-  const caption = `${d.name} Rate Comparison as of ${time12()}`;
+  const caption = `${d.name} Rate Comparison as of ${koreaTime12()}`;
 
   const grid = !!d.grid;
   const verticalGrid = grid && !!d.gridVertical;

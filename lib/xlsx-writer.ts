@@ -11,6 +11,7 @@
 
 import ExcelJS from "exceljs";
 import { existsSync } from "node:fs";
+import { KOREA_TIME_ZONE, todayStr } from "./date";
 
 // Provider -> main-table column (B..G). Sentbe (G) stays blank (not scraped).
 const PROVIDER_COL = { GME: 2, E9PAY: 3, HANPASS: 4, GMONEY: 5, SBI: 6 };
@@ -26,13 +27,15 @@ const NAVY = "FF1F4E78";
 const LIGHT = "FFE2EFDA";
 
 function monthSheetName(d) {
-  return `${d.toLocaleString("en-US", { month: "long" })} ${d.getFullYear()}`;
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: KOREA_TIME_ZONE, month: "long", year: "numeric",
+  }).format(d);
 }
 function timeLabel(d) {
-  let h = d.getHours();
-  const ampm = h < 12 ? "AM" : "PM";
-  h = h % 12 || 12;
-  return `${ampm} ${String(h).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: KOREA_TIME_ZONE, hour: "2-digit", minute: "2-digit", hour12: true,
+  }).formatToParts(d).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
+  return `${parts.dayPeriod} ${parts.hour}:${parts.minute}`;
 }
 function fill(cell, argb) {
   cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb } };
@@ -155,7 +158,8 @@ export async function writeExcel(filePath, records, sbi, dateObj) {
   const byMethodForRanking = {};
   for (const m of METHODS) {
     const row = ws.getRow(next);
-    row.getCell(1).value = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()));
+    const [year, month, day] = todayStr(dateObj).split("-").map(Number);
+    row.getCell(1).value = new Date(Date.UTC(year, month - 1, day));
     row.getCell(8).value = timeLabel(dateObj);
     row.getCell(9).value = m.remark;
 

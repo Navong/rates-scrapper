@@ -11,6 +11,7 @@ import { appendFile, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { page, siteHeader } from "./theme";
 import { redisEnabled, rpushCapped, ltail } from "./redis";
+import { todayStr } from "./date";
 
 const STATE_DIR = process.env.STATE_DIR || ".";
 const FILE = join(STATE_DIR, "events.jsonl");
@@ -25,9 +26,8 @@ export function logEvent(ev) {
 }
 
 const dayKey = (d) => {
-  // Local day (server runs TZ=Asia/Seoul), so "today" matches the user's day.
-  const x = new Date(d);
-  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  // Explicit Korean calendar day, even when this code runs outside the Pi.
+  return todayStr(new Date(d));
 };
 const pct = (arr, p) => {
   if (!arr.length) return 0;

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import CountryViewPicker from "../CountryViewPicker";
+import { KOREA_TIME_ZONE } from "@/lib/date";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -114,8 +115,8 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
           tickMargin={8}
           minTickGap={32}
           tickFormatter={(value) => range === "today"
-            ? new Date(value).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-            : new Date(value).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+            ? new Date(value).toLocaleTimeString("en-US", { timeZone: KOREA_TIME_ZONE, hour: "numeric", minute: "2-digit" })
+            : new Date(value).toLocaleDateString("en-US", { timeZone: KOREA_TIME_ZONE, month: "short", day: "numeric" })}
         />
         <ChartTooltip
           cursor={false}
@@ -123,6 +124,7 @@ function InteractiveRateChart({ providers, visible, range, mode, onToggleProvide
             <ChartTooltipContent
               indicator="dot"
               labelFormatter={(value) => new Date(Number(value)).toLocaleString("en-US", {
+                timeZone: KOREA_TIME_ZONE,
                 month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
               })}
               payloadSorter={(left, right) => {

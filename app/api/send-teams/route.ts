@@ -1,14 +1,8 @@
 import { getCountry } from "@/lib/countries";
+import { koreaTime12 } from "@/lib/date";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const pad2 = (n) => String(n).padStart(2, "0");
-const time12 = (d = new Date()) => {
-  const ap = d.getHours() >= 12 ? "PM" : "AM";
-  const h = d.getHours() % 12 || 12;
-  return `${pad2(h)}:${pad2(d.getMinutes())} ${ap}`;
-};
 
 // POST /api/send-teams?country=KH
 // Posts the caption ("<Country> Rate at hh:mm AM/PM") + the live sheet image to a
@@ -26,7 +20,7 @@ export async function POST(req) {
     return Response.json({ ok: false, error: "TEAMS_WEBHOOK_URL is not configured on the server." }, { status: 501 });
   }
 
-  const caption = `${country.name} Rate at ${time12()}`;
+  const caption = `${country.name} Rate at ${koreaTime12()}`;
 
   // Absolute base from the forwarded scheme/host (behind the Cloudflare tunnel the
   // container sees http://localhost). The token lets Teams fetch the image.

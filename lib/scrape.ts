@@ -18,6 +18,7 @@
 // Fixed inputs on EVERY scrape: Cambodia / USD / receive 1000 USD, for the
 // bank-deposit and mobile-wallet payout methods of each provider.
 //
+import { KOREA_TIME_ZONE, todayStr } from "./date";
 // Usage:
 //   node scrape.mjs            # print comparison + append rows to rates.csv
 //   node scrape.mjs --json     # print raw API responses
@@ -323,10 +324,10 @@ export async function collectRates() {
 }
 
 function ampmTime(d) {
-  let h = d.getHours();
-  const ampm = h < 12 ? "AM" : "PM";
-  h = h % 12 || 12;
-  return `${ampm} ${String(h).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone: KOREA_TIME_ZONE, hour: "2-digit", minute: "2-digit", hour12: true,
+  }).formatToParts(d).filter((p) => p.type !== "literal").map((p) => [p.type, p.value]));
+  return `${parts.dayPeriod} ${parts.hour}:${parts.minute}`;
 }
 
 /**
@@ -348,7 +349,7 @@ export function buildBasesPayload({ timestamp, records, sbi, errors = [] }) {
     };
   };
   return {
-    date: d.toISOString().slice(0, 10),
+    date: todayStr(d),
     time: ampmTime(d),
     receiveUSD: toNumber(RECEIVE_USD),
     bankDeposit: baseFor("BANK DEPOSIT"),  // → "Bank Deposit" row

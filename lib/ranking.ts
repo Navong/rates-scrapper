@@ -16,6 +16,7 @@ import { PROVIDER_LABEL, countryList, anchorOf, providerInMethod, currencyFor } 
 import { page, countryTabs, siteHeader } from "./theme";
 import { statusOf, humanAge } from "./manual";
 import { feeFor, getFeeOverride } from "./fees";
+import { koreaTime24, todayStr } from "./date";
 
 // Competitor cell fills. Anything not listed falls back to blue ("others").
 export const FILL = {
@@ -315,8 +316,8 @@ function sheetStats(country, grouped, manual, failed = []) {
 export function renderRankingHtml(country, records, manual, meta = {}) {
   const grouped = buildRows(country, records, manual);
   const now = meta.now instanceof Date ? meta.now : new Date();
-  const dateStr = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-  const timeStr = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const dateStr = todayStr(now);
+  const timeStr = koreaTime24(now);
 
   // Same tables, same size everywhere. `grid` corridors lay them out
   // two-across with the last one centred underneath, instead of stacking.

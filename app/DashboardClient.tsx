@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
 import { AppHeader, SiteFooter } from "@/lib/ui";
 import { anchorOf } from "@/lib/countries";
+import { KOREA_TIME_ZONE } from "@/lib/date";
 import CountryViewPicker from "./CountryViewPicker";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
@@ -287,7 +288,7 @@ export default function DashboardClient({ countries, chip, reportDate, initialCo
   const curAmount = d ? ((methods.find((m) => m.key === curMethod)?.receiveAmount) ?? d.receiveAmount) : 0;
   const curCurrency = d ? ((methods.find((m) => m.key === curMethod)?.currency) ?? d.currency) : "";
   const sub = d
-    ? <>{d.flag} {d.name} · receive {curAmount.toLocaleString("en-US")} {curCurrency}{mounted && at ? ` · updated ${new Date(at).toLocaleTimeString()}` : ""}</>
+    ? <>{d.flag} {d.name} · receive {curAmount.toLocaleString("en-US")} {curCurrency}{mounted && at ? ` · updated ${new Date(at).toLocaleTimeString("en-US", { timeZone: KOREA_TIME_ZONE })}` : ""}</>
     : "Loading…";
 
   // Exclude no-rate / unset manual rows so an expired competitor never shows as
