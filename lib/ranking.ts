@@ -231,7 +231,7 @@ function manualPanel(country, manual) {
     })
   ).join("");
   return `<div class="panel manualp">
-    <h3>Manual rates · re-enter every hour</h3>
+    <h3>Manual rates · re-enter every 30 minutes</h3>
     <div id="m-warn"></div>
     <form id="manual-form" onsubmit="return false">
       <div class="mgrid">${cards}</div>
@@ -379,14 +379,14 @@ ${sheetScript(country)}`;
   .sheetscroll tr.norate td{color:#98a0ab}
   /* Inline manual editor */
   .manualp{margin-top:16px}
-  .mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
-  .mcard{display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--line);
-         border-radius:14px;padding:12px}
+  .mgrid{display:flex;flex-direction:column;gap:8px}
+  .mcard{display:grid;grid-template-columns:minmax(180px,1fr) minmax(180px,260px) 90px;align-items:center;
+         gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
   .mrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px}
   .mcard input{padding:10px;font-size:16px;font-weight:600;border:1.5px solid var(--line);border-radius:10px;
                background:var(--card);color:var(--text);text-align:right}
   .mcard input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-weak)}
-  .mfee{font-size:11.5px;color:var(--muted)}
+  .mfee{font-size:11.5px;color:var(--muted);text-align:right;white-space:nowrap}
   .mst{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
   .mst.fresh{background:rgba(21,184,134,.15);color:var(--good)}
   .mst.old{background:rgba(240,68,82,.14);color:var(--bad)}

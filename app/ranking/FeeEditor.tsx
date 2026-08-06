@@ -37,9 +37,9 @@ export default function FeeEditor({ code, cards, onSaved }) {
     <details className="panel feep">
       <summary>⚙ Edit service fees</summary>
       <form ref={formRef} onSubmit={(e) => e.preventDefault()}>
-        <div className="mgrid">
+        <div className="feegrid">
           {cards.map((c) => (
-            <label className="mcard" key={c.name}>
+            <label className="feecard" key={c.name}>
               <span className="mrow">
                 <b>{c.label}</b>
                 {c.override ? <span className="mst fresh">edited</span> : null}

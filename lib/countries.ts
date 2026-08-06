@@ -404,11 +404,13 @@ export const COUNTRIES = {
     ],
     providers: {
       // --- Cash Payment ---
-      GME_API_CASH_WALLET: { api: "GME", label: "GME (API)", countryName: "Myanmar",
+      GME_API_CASH_WALLET: { api: "GME", label: "GME", countryName: "Myanmar",
                        deliveryMethod: { CASH: "1", WALLET: "13" }, singleRate: true,
                        methods: ["CASH", "WALLET"], fee: { CASH: 5000, WALLET: 5000 } },
-      GME_API_BANK:  { api: "GME", label: "GME (API)", countryName: "Myanmar",
+      GME_API_BANK:  { api: "GME", label: "GME", countryName: "Myanmar",
                        deliveryMethod: { BANK: "2" }, methods: ["BANK"], fee: { BANK: 8000 } },
+      HANAEZ:        { manual: true, label: "Hana EZ", methods: ["CASH", "BANK", "WALLET"],
+                       fee: { CASH: 5000, BANK: 5000, WALLET: 5000 } },
       GME_WU:        { manual: true, label: "GME (WU)",  methods: ["CASH"], fee: { CASH: 0 } },
       GME_RIA:       { manual: true, label: "GME (Ria)", methods: ["CASH"], fee: { CASH: 0 } },
       GMONEY_CASH:   { api: "GMONEY", label: "Gmoney (Cash Pickup)", country: "Myanmar", payment: { CASH: "Cash Pickup" }, methods: ["CASH"], fee: { CASH: 5000 } },

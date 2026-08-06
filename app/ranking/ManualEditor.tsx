@@ -63,7 +63,7 @@ export default function ManualEditor({ code, cards, onSaved }) {
 
   return (
     <div className="panel manualp">
-      <h3>Manual rates · re-enter every hour</h3>
+      <h3>Manual rates · re-enter every 30 minutes</h3>
       <div id="m-warn">
         {warnings ? (
           <div className="warn">
