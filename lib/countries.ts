@@ -182,7 +182,7 @@ export const COUNTRIES = {
     // GME exposes only these three payout methods for PH (no partner breakdown).
     providers: {
       GME:      { countryName: "Philippines", deliveryMethod: { CASH: "1", BANK: "2", WALLET: "13" },
-                  fee: { CASH: 0, BANK: 0, WALLET: 0 } },
+                  totalIncludesFee: true, fee: { CASH: 0, BANK: 0, WALLET: 0 } },
       // GME's public quote distinguishes payout types but does not expose these
       // partner-specific rates, so they remain separate manual sheet entries.
       GME_CEBUANA:  { manual: true, label: "GME (Cebuana)", methods: ["CASH"], fee: { CASH: 0 } },
