@@ -15,6 +15,8 @@ export const COUNTRIES = {
     currency: "USD",
     receiveAmount: 1000,
     anchor: "GME",        // Price gap is measured against GME on every corridor
+    grid: true,
+    gridVertical: true,    // match the Philippines vertical sheet layout
     // Rule 5: one table per service.
     methods: [
       { key: "BANK", label: "Bank Deposit" },
