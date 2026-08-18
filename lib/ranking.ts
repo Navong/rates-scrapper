@@ -38,7 +38,9 @@ export function buildRows(country, records, manual) {
   const out = {};
   for (const m of country.methods) {
     const rows = records
-      .filter((r) => r.method === m.key)
+      // A provider may be changed from scraped to manual while Redis still
+      // contains its previous live record. Never render both versions.
+      .filter((r) => r.method === m.key && !country.providers[r.provider]?.manual)
       // Fee override (if any) wins over the scraped/config fee, applied here at
       // render time so a fee edit takes effect without a re-scrape.
       .map((r) => ({ provider: r.provider, op: country.providers[r.provider]?.label || PROVIDER_LABEL[r.provider] || r.provider, krw: r.principalKRW, fee: feeFor(country.code, r.provider, m.key, r.feeKRW), manual: false }));

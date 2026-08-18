@@ -282,9 +282,6 @@ export const COUNTRIES = {
     anchor: "GME",
     grid: true,
     gridVertical: true,
-    // GME returns the same USD quote for bank and cash. Fetch once and mirror
-    // it across the three business channels to avoid unnecessary rate-limit use.
-    gmeSingleRate: true,
     methods: [
       { key: "BANK", label: "Bank Deposit (BNCTL)" },
       { key: "CASH_MG", label: "Cash Payment MG" },
@@ -292,8 +289,7 @@ export const COUNTRIES = {
     ],
     providers: {
       GME: {
-        countryName: "Timor-Leste",
-        deliveryMethod: { BANK: "2", CASH_MG: "1", CASH_WU: "1" },
+        manual: true,
         fee: { BANK: 5000, CASH_MG: 5000, CASH_WU: 5000 },
       },
       HANPASS: {

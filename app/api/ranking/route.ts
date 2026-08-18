@@ -19,13 +19,16 @@ export async function GET(req) {
   try {
     const { records, errors, cached, stale } = await getCountryRecords(country, fresh);
     const manual = getStore();
-    const data = { ...buildRankingData(country, records, manual), failed: errors };
+    // Hide stale failures for providers that have since become manual. Redis
+    // may still contain the previous scraper error until the next refresh.
+    const visibleErrors = errors.filter((e) => !country.providers[String(e.who).split("/")[0]]?.manual);
+    const data = { ...buildRankingData(country, records, manual), failed: visibleErrors };
 
     const dur = Date.now() - t0;
     const state = stale ? "STALE" : cached ? "HIT" : "MISS";
     const c = await cookies();
     const h = await headers();
-    const failedDetail = errors.map((e) => `${e.who} (${e.error})`).join("; ") || "none";
+    const failedDetail = visibleErrors.map((e) => `${e.who} (${e.error})`).join("; ") || "none";
     console.log(`[${new Date().toISOString()}] /api/ranking ${country.code} ${dur}ms cache=${state} failed=${failedDetail}`);
     logEvent({
       k: "api", p: "/ranking", c: country.code, d: dur, ch: cached,

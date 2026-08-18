@@ -130,7 +130,7 @@ async function doScrape(country, fresh) {
     const have = new Set(records.map(key));
     const carried: string[] = [];
     for (const r of prev.records) {
-      if (country.providers[r.provider] && !have.has(key(r)) && r._at && now - r._at < MAX_STALE) {
+      if (country.providers[r.provider] && !country.providers[r.provider].manual && !have.has(key(r)) && r._at && now - r._at < MAX_STALE) {
         records.push({ ...r, carried: true });
         carried.push(key(r));
       }
