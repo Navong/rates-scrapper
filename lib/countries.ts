@@ -169,10 +169,8 @@ export const COUNTRIES = {
     // Keep the three service tables in one vertical column in sheet view.
     grid: true,
     gridVertical: true,
-    // GME quotes the SAME exchange rate for all three PH payout methods (verified
-    // against the live API). Fetch it once and mirror, instead of 3 calls — that
-    // is what keeps us under GME's ~4-rapid-call burst limit (errorCode 429).
-    gmeSingleRate: true,
+    // GME's Philippines calculator currently returns errorCode 1 for every
+    // payout method, so keep these rates editable until its API is restored.
     // Rule 5: one table per service.
     methods: [
       { key: "CASH", label: "Cash Payment" },
@@ -181,8 +179,7 @@ export const COUNTRIES = {
     ],
     // GME exposes only these three payout methods for PH (no partner breakdown).
     providers: {
-      GME:      { countryName: "Philippines", deliveryMethod: { CASH: "1", BANK: "2", WALLET: "13" },
-                  totalIncludesFee: true, fee: { CASH: 0, BANK: 0, WALLET: 0 } },
+      GME:      { manual: true, label: "GME", fee: { CASH: 0, BANK: 0, WALLET: 0 } },
       // GME's public quote distinguishes payout types but does not expose these
       // partner-specific rates, so they remain separate manual sheet entries.
       GME_CEBUANA:  { manual: true, label: "GME (Cebuana)", methods: ["CASH"], fee: { CASH: 0 } },
